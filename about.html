@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    :root {
+      
+      --panel: #1f1f1f;
+      --panel-3: #2a2a2a;
+      --border: #2a2a2a;
+      --text: #ccc;
+      --muted: #aaa;
+      --accent: #89CFF0;
+    }
+
+    body {
+      
+      padding: 0 180px; 
+    }
+
+    #topp-boks {
+      margin: 30px 0 24px;
+      padding: 30px 35px;
+      background-color: var(--panel);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .topp-boks-div {
+      background-color: var(--panel-3);
+      padding: 16px 20px;
+      margin: -30px -35px 20px -35px;
+      border-top-left-radius: 10px; 
+      border-top-right-radius: 10px; 
+      border-bottom: 1px solid #1f1f1f;
+    }
+
+    #overskrift {
+      font-size: 1.9em;
+      color: #fff;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 30px;
+      align-items: start;
+      padding-top: 8px;
+      margin-bottom: 40px;
+    }
+
+    .overview-info,
+    .overview-chart {
+      background-color: #161616;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+
+
+
+.about-content {
+  display: flex;
+  gap: 16px; 
+  align-items: stretch; 
+}
+
+
+
+
+
+
+.about-content img {
+  flex: 0 0 70%;
+  width: 70%;
+  max-width: none;           
+  border-radius: 8px;
+  height: auto;
+}
+
+
+.about-text {
+  flex: 1;                   
+  background-color: #161616;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+
+
+
+
+
+
+
+    /* ------------------------------------------ */
+
+
+
+
+
+
+@media (max-width: 1380px) {
+  .about-content {
+    flex-direction: column;
+    align-items: stretch;    
+  }
+
+  .about-content img {
+    flex: none;              
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .about-text {
+    flex: none;              
+    width: 100%;
+  }
+}
+
+
+
+
+
+
+
+@media (max-width: 1600px) {
+body {
+
+
+padding: 0 5%; 
+
+}
+}
+
+
+
+
+
+p {
+    line-height: 1.6; 
+    margin-bottom: 1em; 
+    color: var(--muted); 
+}
+
+
+a:hover {
+    text-decoration: underline;
+}
+
+
+.workinprogress {
+  
+  color: #ccc;
+  font-weight: bold;
+  font-style: italic;
+
+}
+
+
+
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-link">← Back to leaderboard</a>
+
+  <section id="topp-boks">
+    <div class="topp-boks-div">
+      <h2 id = "overskrift">About the Customs Ladder</h2>
+    </div>
+    
+    <div class="about-content">
+      <img src="assets/twilight.webp" alt="twilight.webp">
+      
+      <div class="about-text">
+        <p> This website downloads the matchlists of anyone that is currently a member of the <span class="workinprogress">#customs</span> channel at <a href="http://www.shieldbattery.net">shieldbattery.net</a>, extracts the 2v2 lobby games, runs them through a rating algorithm, and publishes the results to a leaderboard.</p>
+        <p>If you find any bugs or errors, or if you have any questions or suggestions for improvement, please dm <span class="workinprogress">minoaturbw</span> at Discord.</p>
+        
+
+</div>
+    </div>
+
+  </section>
+
+
+</body>
+</html>

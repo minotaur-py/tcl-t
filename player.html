@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Player Profile</title>
+  <link rel="stylesheet" href="style.css" />
+ <style>
+:root {
+
+  --panel: #1f1f1f;
+  --panel-3: #2a2a2a;
+  --border: #2a2a2a;
+  --muted: #aaa;
+  --accent: #89CFF0;
+  --row-odd: #1b1b1b;
+  --row-even: #242424;
+  --match-header-bg: #2a2a2a;
+  --match-border: #222;
+  --shadow: rgba(0, 0, 0, 0.45);
+
+
+  --text: #ccc; 
+  --text-light: #ddd;
+  --text-white: #fff;
+}
+
+
+html, body {
+  height: 100%;
+}
+
+body {
+  padding: 0 180px;
+}
+
+body tr:hover {
+  background-color: initial;
+}
+
+
+#player-overview {
+  margin: 30px 0 24px;
+  padding: 30px 35px 25px 35px;
+  background-color: var(--panel);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.overview-header {
+  background-color: var(--panel-3);
+  padding: 16px 20px;
+  margin: -30px -35px 20px -35px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom: 1px solid var(--panel); 
+}
+
+#playerNameHeader {
+  font-size: 1.9em;
+  color: var(--text-white);
+  font-weight: 700;
+}
+
+#playeroverview-summary {
+  margin-top: -0.3em;
+  font-size: 1.1em;
+  line-height: 1.25;
+  color: var(--text-light);
+}
+
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 30px;
+  align-items: start;
+  padding-top: 8px;
+}
+
+.overview-info,
+.overview-chart {
+  background-color: #161616;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.overview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  line-height: 1.8;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: overlay;
+}
+
+.playeroverview-title {
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--text-white);
+  margin-bottom: 6px;
+}
+
+.overview-info .info-row {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: #dcdcdc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.overview-info .info-row:last-child {
+  border-bottom: none;
+}
+
+.overview-info .value {
+  font-size: 1.15em;
+  color: #cfcfcf;
+}
+
+
+.overview-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 380px;
+  padding: 16px;
+}
+
+.overview-chart canvas {
+  width: 100% !important;
+  height: calc(100% - 30px) !important;
+}
+
+.chart-label {
+  margin-top: 12px;
+  font-size: .95em;
+  color: var(--muted);
+}
+
+.chart-footer {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.chart-footer .chart-label {       
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  font-size: .95em;
+  color: var(--muted);
+}
+
+.chart-footer button {
+  margin-left: auto;
+}
+
+.chart-indicator {
+    font-size: .95em;
+    color: var(--muted);
+    min-width: 32px; 
+    
+}
+
+
+
+
+.chart-mode-btn {
+  padding: 6px 10px;
+  font-size: 0.85em;
+  background-color: #333;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-light);
+  cursor: pointer;
+}
+
+.chart-mode-btn:hover {
+  background-color: #444;
+}
+
+.chart-mode-btn.hidden {
+  display: none;
+}
+
+
+
+#matches {
+  margin-bottom: 60px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px var(--shadow);
+  background-color: #161616;
+}
+
+
+.match-header {
+  display: grid;
+  grid-template-columns: 110px 410px 1fr 410px 1fr 150px;
+  align-items: center;
+  gap: 30px;
+  font-weight: bold;
+  font-size: .9em;
+  letter-spacing: .05em;
+  color: #eee;
+  background-color: var(--match-header-bg);
+  padding: 10px 15px;
+  text-align: center;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom: 1px solid var(--panel); 
+}
+
+.match-header .team-header {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  column-gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 0;
+}
+
+.team-title {
+  text-align: left;
+  padding-left: 8px;
+}
+
+.mmr-group {
+  display: grid;
+  grid-template-columns: 10px 158px 60px 48px;
+  justify-self: end;
+  width: 216px;
+  text-align: right;
+}
+
+.match-status {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.match-status .ago {
+  display: block;
+  font-size: .8em;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+
+.match-row {
+  display: grid;
+  grid-template-columns: 120px 425px 1fr 425px 1fr 140px;
+  align-items: center;
+  gap: 30px;
+  padding: 18px 15px;
+  margin: 0;
+  border-bottom: 1px solid var(--match-border);
+  background-color: var(--row-odd);
+}
+
+.match-row:nth-child(even) {
+  background-color: var(--row-even);
+}
+
+.team-column {
+  display: grid;
+  grid-template-columns:
+    17px    /* race icon */
+    1fr     /* name */
+    70px    /* points */
+    48px    /* points delta */
+    56px    /* mmr */
+    48px;   /* mmr delta */
+  align-items: center;
+  gap: .25rem .5rem;
+}
+
+.player-card {
+  display: contents;
+}
+
+.player-name {
+  color: var(--accent) !important;
+  text-decoration: none;
+  font-size: 1.1rem;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.player-name:hover {
+  text-decoration: underline;
+}
+
+.player-rating {
+  font-size: 1rem;
+  color: var(--text-light);
+}
+
+
+.player-points, .player-rating { 
+  font-size: 1rem;
+  color: var(--text-light);
+  text-align: right;
+}
+
+.player-change, .player-points-change { 
+  font-size: .8rem;
+  line-height: 1;
+  margin-left: 2px;
+  color: #bbb;
+}
+
+.player-change::before, .player-points-change::before { content: '('; color: var(--text-white); }
+.player-change::after, .player-points-change::after { content: ')'; color: var(--text-white); }
+
+.race-icon {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  margin-right: 5px; 
+  object-fit: contain;
+}
+
+.match-info {
+  text-align: center;
+  font-size: 1.05em;
+  color: #ccc;
+}
+
+.duration {
+  font-size: .8em;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+
+#extra-stats {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 35px;
+  margin-top: 30px;
+  padding: 20px 0 0 0; 
+}
+
+#extra-stats.open {
+  max-height: 4600px;
+  padding-bottom: 33px;
+}
+
+.extra-stats-btn {
+  margin-top: 15px;
+  padding: 10px 12px;
+  background-color: #2b2b2b;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: #eee;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+
+.extra-stats-btn:hover {
+  background-color: #3a3a3a;
+}
+
+
+.extra-chart, .extra-chart-tall {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 72px 20px;
+  gap: 10px;
+  background-color: #161616;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.extra-chart {
+  height: 350px;
+}
+
+.extra-chart-tall {
+  height: 1050px;
+}
+
+.extra-chart canvas, .extra-chart-tall canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+
+@media (max-width: 1600px) and (min-width: 1300px) {
+  body {
+    padding-left: calc(180px - (1600px - 100vw) / 2);
+    padding-right: calc(180px - (1600px - 100vw) / 2);
+  }
+}
+
+@media (max-width: 1299.98px) {
+  body {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+}
+
+@media (max-width: 1290px) {
+  .match-header,
+  .match-row {
+    grid-template-columns: 50px 1fr 1px 1fr 1px 90px;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 1000px) {
+  body {
+    padding: 0 30px;
+  }
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .overview-chart {
+    min-height: 250px;
+  }
+  .overview-chart canvas {
+    height: 180px !important;
+  }
+}
+</style>
+</head>
+<body>
+  <a href="index.html" class="back-link">← Back to leaderboard</a>
+
+<section id="player-overview">
+
+  <div class="overview-header">
+    <span id="playerNameHeader">Loading...</span>
+  </div>
+
+  <div class="overview-grid">
+    <!-- LEFT COLUMN -->
+    <div class="overview-info">
+      <div class="playeroverview-title">Player Overview:</div>
+      <div id="playeroverview-summary">
+        <span id="playeroverview-text">Loading stats...</span>
+      </div>
+
+      <!-- New toggle button -->
+      <button id="toggleExtraStats" class="extra-stats-btn">
+        Show additional statistics
+      </button>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="overview-chart">
+      <canvas id="ratingChart"></canvas>
+      <div class="chart-label">Points Progression</div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="overview-chart">
+      <canvas id="raceChart"></canvas>
+      <div class="chart-label">Race Selection</div>
+    </div>
+  </div>
+
+  <!-- Additional statistics drawer -->
+
+<div id="extra-stats">
+    <div class="extra-chart">
+        <canvas id="extraChart1"  height="260"></canvas>
+
+        <div class="chart-footer">
+    <div class="chart-indicator" id="extraChart1Indicator">(1/3)</div>
+
+    <div class="chart-label" id="extraChart1Label">Loading...</div>
+
+    <button id="chartModeToggle" class="chart-mode-btn">
+        Show Points per Game
+    </button>
+</div>
+    </div>
+    
+    <div class="extra-chart">
+        <canvas id="extraChart2" height="260"></canvas> 
+        
+        <div class="chart-footer">
+    <div class="chart-indicator" id="extraChart2Indicator">(1/4)</div>
+
+    <div class="chart-label" id="extraChart2Label">Loading...</div>
+
+    <button id="chartModeToggle2" class="chart-mode-btn">
+        Show Points per Game
+    </button>
+</div>
+    </div>
+    
+
+
+<div class="extra-chart-tall" id="extraChart3Container">
+        <canvas id="extraChart3" height="260"></canvas> 
+        
+        <div class="chart-footer">
+            <div class="chart-indicator" id="extraChart3Indicator">(1/4)</div>
+            <div class="chart-label" id="extraChart3Label">Loading...</div>
+            
+            <button id="chartModeToggle3" class="chart-mode-btn" style="display: none;">
+                Show MMR per Game
+            </button>
+        </div>
+    </div>
+
+
+
+
+
+
+   <div class="extra-chart-tall" id="extraChart4Container">
+        <canvas id="extraChart4" height="260"></canvas> 
+        
+        <div class="chart-footer">
+            <div class="chart-indicator" id="extraChart4Indicator">(1/4)</div>
+            <div class="chart-label" id="extraChart4Label">Loading...</div>
+            
+            <button id="chartModeToggle4" class="chart-mode-btn" style="display: none;">
+                Show MMR per Game
+            </button>
+        </div>
+    </div>
+    
+   <div class="extra-chart-tall" id="extraChart5Container">
+        <canvas id="extraChart5" height="260"></canvas> 
+        
+        <div class="chart-footer">
+            <div class="chart-indicator" id="extraChart5Indicator">(1/4)</div>
+            <div class="chart-label" id="extraChart5Label">Loading...</div>
+            
+            <button id="chartModeToggle4" class="chart-mode-btn" style="display: none;">
+                Show MMR per Game
+            </button>
+        </div>
+    </div>
+
+
+
+
+
+    
+</div>
+
+</section>
+
+
+
+
+
+  <section id="match-section">
+    <div class="match-header">
+    <div>RESULT</div>
+
+    <div class="team-header">
+      <div class="team-title">HOME TEAM</div>
+      <div class="mmr-group">
+        <div>POINTS</div>            
+        <div>MMR</div>        
+        <div></div>
+      </div>
+    </div>
+
+    <div></div>
+
+    <div class="team-header">
+      <div class="team-title">AWAY TEAM</div>
+      <div class="mmr-group">
+        <div>POINTS</div>     
+        <div>MMR</div>
+        <div></div>
+      </div>
+    </div>
+
+    <div></div>
+
+    <div>MAP / DURATION</div>
+  </div>
+
+     </div>
+    <div id="matches"><!-- JS will append .match-row items here --></div>
+  </section>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+  <script src="player.js?v=2"></script>
+
+
+</body>
+</html>
