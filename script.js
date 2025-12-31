@@ -121,6 +121,42 @@ if (seasonLabelEl) {
       ${formatDate(startTime)}${endTime ? " – " + formatDate(endTime) :""}
     </span>
 `;
+
+const extra = seasonLabelEl.querySelector(".season-extra");
+    const wrap = document.querySelector(".season-wrap");
+
+    if (extra && wrap) {
+        // Temporarily reveal for measurement
+        const originalStyle = {
+            maxWidth: extra.style.maxWidth,
+            opacity: extra.style.opacity,
+            position: extra.style.position
+        };
+
+        extra.style.maxWidth = "none";
+        extra.style.opacity = "0";
+        extra.style.position = "absolute";
+
+        const extraWidth = extra.getBoundingClientRect().width;
+        const gap = parseFloat(getComputedStyle(extra).marginLeft) || 0;
+
+        // Restore animation state
+        extra.style.maxWidth = originalStyle.maxWidth;
+        extra.style.opacity = originalStyle.opacity;
+        extra.style.position = originalStyle.position;
+
+        // Apply the CSS variable to the wrapper
+        const shiftX = -(extraWidth + gap) / 2;
+        wrap.style.setProperty("--shift-x", `${shiftX}px`);
+    }
+
+
+
+
+
+
+
+
 (function enableSeasonCountdown() {
   const extraEl = seasonLabelEl?.querySelector(".season-extra");
   if (!extraEl || !endTime) return;
@@ -228,7 +264,7 @@ const allPlayers = Object.entries(ratings).map(([id, v]) => {
   };
 });
 
-  const MIN_GAMES = 10;
+  const MIN_GAMES = 0;
   const eligiblePlayers = allPlayers
     .filter(p => p.games >= MIN_GAMES)
     .sort((a, b) => b.rating - a.rating);
