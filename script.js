@@ -1,4 +1,14 @@
-// script.js
+let viewingSeason = null; // number
+let isHistoricView = false; // boolean
+let currentSeason = null;
+let seasonQuery = "";
+let tbody = null;
+let seasonMeta = null;
+
+let seasonCountdownInterval = null;
+let seasonCountdownShowing = false;
+let seasonCountdownOriginalText = "";
+let seasonCountdownEndTime = null;
 
 function fetchNoCache(url) {
   return fetch(`${url}?v=${Date.now()}`);
@@ -15,14 +25,14 @@ async function getCurrentSeason() {
     .map(([s, start]) => [Number(s), start])
     .sort((a, b) => a[1] - b[1]);
 
-  let currentSeason = sorted[0][0];
+  let currentSeasonNum = sorted[0][0];
   let startTime = sorted[0][1];
   let endTime = null;
 
   for (let i = 0; i < sorted.length; i++) {
     const [season, start] = sorted[i];
     if (now >= start) {
-      currentSeason = season;
+      currentSeasonNum = season;
       startTime = start;
       endTime = sorted[i + 1] ? sorted[i + 1][1] : null;
     } else {
@@ -30,21 +40,138 @@ async function getCurrentSeason() {
     }
   }
 
-  //  BACKWARD-COMPATIBLE RETURN
-  // Old code expects a number → keep it
-  // New code wants extra info → include it
-  return Object.assign(
-    currentSeason,            // primitive number
-    {
-      season: currentSeason,  // new field
-      start: startTime,       // new field
-      end: endTime            // new field
-    }
-  );
+  const result = {
+    season: currentSeasonNum,
+    start: startTime,
+    end: endTime
+  };
+
+  result.valueOf = () => currentSeasonNum;
+  result.toString = () => String(currentSeasonNum);
+
+  return result;
 }
-// --- Utility: convert timestamp (ms or epoch) to relative time ---
+
+
+
+function formatSeasonRange(start, end) {
+  const startStr = formatFullDate(start);
+  const endStr = end ? formatFullDate(end) : '';
+  return end ? `${startStr} – ${endStr}` : startStr;
+}
+
+function updateSeasonCountdown(extraEl) {
+  const now = Date.now();
+  const remaining = seasonCountdownEndTime - now;
+
+  function formatRemaining(ms) {
+    if (ms <= 0) return "0s remaining";
+    const sec = Math.floor(ms / 1000);
+    const min = Math.floor(sec / 60);
+    const hr = Math.floor(min / 60);
+    const day = Math.floor(hr / 24);
+
+    if (day >= 1) return `${day} day${day > 1 ? "s" : ""} left`;
+    if (hr >= 1) return `${hr} hour${hr > 1 ? "s" : ""} left`;
+    if (min >= 1) return `${min} minute${min > 1 ? "s" : ""} left`;
+    return `${sec} second${sec > 1 ? "s" : ""} left`;
+  }
+
+  extraEl.textContent = formatRemaining(remaining);
+}
+
+
+
+
+function enableSeasonCountdown(seasonLabelEl, endTime) {
+  const extraEl = seasonLabelEl?.querySelector(".season-extra");
+  if (!extraEl) return;
+
+  // Always reset when called
+  clearInterval(seasonCountdownInterval);
+  seasonCountdownInterval = null;
+  seasonCountdownShowing = false;
+
+  if (isHistoricView || !endTime) return;
+
+  seasonCountdownEndTime = endTime;
+  seasonCountdownOriginalText = extraEl.textContent.trim();
+}
+
+
+
+
+function maybeLink(inner, href) {
+  return isHistoricView
+    ? `<span class="row-static">${inner}</span>`
+    : `<a href="${href}" class="row-link">${inner}</a>`;
+}
+
+function ratingToIcon(rating) {
+  let bucket;
+  if (rating <= 399) bucket = 0;
+  else if (rating <= 849) bucket = 1;
+  else if (rating <= 1999) bucket = 2;
+  else if (rating <= 2999) bucket = 3;
+  else if (rating <= 3999) bucket = 4;
+  else if (rating <= 4999) bucket = 5;
+  else if (rating <= 5999) bucket = 6;
+  else if (rating <= 6999) bucket = 7;
+  else if (rating <= 7999) bucket = 8;
+  else if (rating <= 8999) bucket = 9;
+  else if (rating <= 10499) bucket = 10;
+  else if (rating <= 11999) bucket = 11;
+  else if (rating <= 14499) bucket = 12;
+  else bucket = 13;
+
+  if (bucket <= 1) return "icons/d1.jpg";
+  if (bucket === 2) return "icons/d2.jpg";
+  if (bucket === 3) return "icons/d3.jpg";
+
+  if (bucket >= 4 && bucket <= 6) return `icons/c${bucket - 3}.jpg`;
+  if (bucket >= 7 && bucket <= 9) return `icons/b${bucket - 6}.jpg`;
+  if (bucket >= 10 && bucket <= 12) return `icons/a${bucket - 9}.jpg`;
+
+  return "icons/s.jpg";
+}
+
+formatSeasonRange
+
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function formatFullDate(ts) {
+  return new Date(ts).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function updateSeasonLabel(season, start, end, seasonLabelEl) {
+  if (!seasonLabelEl) return;
+
+  const coreEl = seasonLabelEl.querySelector(".season-core");
+  const extraEl = seasonLabelEl.querySelector(".season-extra");
+
+  if (coreEl) coreEl.textContent = `Season ${season}`;
+
+  if (!extraEl) return;
+
+  if (isHistoricView && end) {
+    extraEl.textContent = `${formatFullDate(start)} – ${formatFullDate(end)}`;
+    extraEl.style.cursor = "default";
+  } else {
+    extraEl.textContent = `${formatDate(start)}${end ? " – " + formatDate(end) : ""}`;
+    extraEl.style.cursor = "";
+  }
+}
+
 function timeAgo(timestamp) {
-  // Accept either number (ms) or numeric string or ISO string
   const then = (typeof timestamp === 'number') ? new Date(timestamp) : new Date(Number(timestamp) || timestamp);
   const now = new Date();
   const diffMs = now - then;
@@ -71,8 +198,6 @@ function timeAgo(timestamp) {
   return `${years}y ago`;
 }
 
-// --- Utility: determine most played race ---
-// Expects counts array in order: [protossCount, zergCount, terranCount, randomCount]
 function mostPlayedRace(counts) {
   if (!Array.isArray(counts) || counts.length < 4) return "-";
   const races = ["Protoss", "Zerg", "Terran", "Random"];
@@ -82,277 +207,303 @@ function mostPlayedRace(counts) {
   return races[i];
 }
 
-// Build a global rank map from ratings object (id -> rank number)
 function buildGlobalRankMap(ratings) {
   const arr = Object.entries(ratings).map(([id, v]) => ({ id, mu: v[1] }));
   arr.sort((a, b) => b.mu - a.mu);
   const map = {};
-  arr.forEach((p, idx) => map[p.id] = idx + 1); // 1-based rank
+  arr.forEach((p, idx) => map[p.id] = idx + 1);
   return map;
 }
 
-// --- Main load logic for index.html leaderboard ---
-document.addEventListener("DOMContentLoaded", async () => {
-  const leaderboardTable = document.querySelector("#leaderboard");
-  if (!leaderboardTable) return;
-  const tbody = leaderboardTable.querySelector("tbody");
-  if (!tbody) return;
-
-  const { season: currentSeason, start: startTime, end: endTime } = await getCurrentSeason();
-
-
-// Set visible label with inline expansion
-const seasonLabelEl = document.getElementById("season-label");
-
-function formatDate(ts) {
-  const str = new Date(ts).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric"
+function renderLeaderboard(ratings, names) {
+  const allPlayers = Object.entries(ratings).map(([id, v]) => {
+    const [games, mu, sigma, wins, pCount, tCount, zCount, rCount, ts] = v;
+    const rating = v[21];
+    const losses = games - wins;
+    return {
+      id, games, mu, sigma, wins, losses,
+      races: [pCount, zCount, tCount, rCount],
+      ts,
+      rating
+    };
   });
-
-  
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-if (seasonLabelEl) {
-  seasonLabelEl.innerHTML = `
-    Season ${currentSeason}
-    <span class="season-extra">
-      ${formatDate(startTime)}${endTime ? " – " + formatDate(endTime) :""}
-    </span>
-`;
-
-const extra = seasonLabelEl.querySelector(".season-extra");
-    const wrap = document.querySelector(".season-wrap");
-
-    if (extra && wrap) {
-        // Temporarily reveal for measurement
-        const originalStyle = {
-            maxWidth: extra.style.maxWidth,
-            opacity: extra.style.opacity,
-            position: extra.style.position
-        };
-
-        extra.style.maxWidth = "none";
-        extra.style.opacity = "0";
-        extra.style.position = "absolute";
-
-        const extraWidth = extra.getBoundingClientRect().width;
-        const gap = parseFloat(getComputedStyle(extra).marginLeft) || 0;
-
-        // Restore animation state
-        extra.style.maxWidth = originalStyle.maxWidth;
-        extra.style.opacity = originalStyle.opacity;
-        extra.style.position = originalStyle.position;
-
-        // Apply the CSS variable to the wrapper
-        const shiftX = -(extraWidth + gap) / 2;
-        wrap.style.setProperty("--shift-x", `${shiftX}px`);
-    }
-
-
-
-
-
-
-
-
-(function enableSeasonCountdown() {
-  const extraEl = seasonLabelEl?.querySelector(".season-extra");
-  if (!extraEl || !endTime) return;
-
-  let showingCountdown = false;
-  let countdownInterval = null;
-  const originalText = extraEl.textContent.trim();
-
-  function formatRemaining(ms) {
-    if (ms <= 0) return "0s remaining";
-
-    const sec = Math.floor(ms / 1000);
-    const min = Math.floor(sec / 60);
-    const hr  = Math.floor(min / 60);
-    const day = Math.floor(hr / 24);
-
-    if (day >= 1) return `${day} day${day > 1 ? "s" : ""} left`;
-    if (hr >= 1)  return `${hr} hour${hr > 1 ? "s" : ""} left`;
-    if (min >= 1) return `${min} minute${min > 1 ? "s" : ""} left`;
-    return `${sec} second${sec > 1 ? "s" : ""} left`;
-  }
-
-  function updateCountdown() {
-    const now = Date.now();
-    const remaining = endTime - now;
-    extraEl.textContent = formatRemaining(remaining);
-  }
-
-  function startCountdown() {
-    showingCountdown = true;
-    updateCountdown();
-    countdownInterval = setInterval(updateCountdown, 1000);
-  }
-
-  function stopCountdown() {
-    showingCountdown = false;
-    clearInterval(countdownInterval);
-    extraEl.textContent = originalText;
-  }
-
-  extraEl.addEventListener("click", (ev) => {
-    ev.stopPropagation(); // prevents parent hover events from interfering
-    if (showingCountdown) stopCountdown();
-    else startCountdown();
-  });
-})();
-
-
-
-
-};
-
-
-function ratingToIcon(rating) {
-  
-  let bucket;
-  if (rating <= 399) bucket = 0;
-  else if (rating <= 849) bucket = 1;
-  else if (rating <= 1999) bucket = 2;
-  else if (rating <= 2999) bucket = 3;
-  else if (rating <= 3999) bucket = 4;
-  else if (rating <= 4999) bucket = 5;
-  else if (rating <= 5999) bucket = 6;
-  else if (rating <= 6999) bucket = 7;
-  else if (rating <= 7999) bucket = 8;
-  else if (rating <= 8999) bucket = 9;
-  else if (rating <= 10499) bucket = 10;
-  else if (rating <= 11999) bucket = 11;
-  else if (rating <= 14499) bucket = 12;
-  else bucket = 13;
-
-  
-  if (bucket <= 1) return "icons/d1.jpg";
-  if (bucket === 2) return "icons/d2.jpg";
-  if (bucket === 3) return "icons/d3.jpg";
-
-  if (bucket >= 4 && bucket <= 6) return `icons/c${bucket - 3}.jpg`;
-  if (bucket >= 7 && bucket <= 9) return `icons/b${bucket - 6}.jpg`;
-  if (bucket >= 10 && bucket <= 12) return `icons/a${bucket - 9}.jpg`;
-
-  return "icons/s.jpg";
-}
-
-
-// Fill popup panel
-
-
-  const [ratings, names] = await Promise.all([
-  fetchNoCache(`data/seasons/${currentSeason}/ratings.json`).then(r => r.json()),
-  fetchNoCache(`data/seasons/${currentSeason}/names.json`).then(r => r.json())
-]);
-
-  // Convert ratings into player objects
-const allPlayers = Object.entries(ratings).map(([id, v]) => {
-  const [games, mu, sigma, wins, pCount, tCount, zCount, rCount, ts] = v;
-
-  const rating = v[21];   
-
-  const losses = games - wins;
-  return { 
-    id, games, mu, sigma, wins, losses,
-    races: [pCount, zCount, tCount, rCount],
-    ts,
-    rating            
-  };
-});
 
   const MIN_GAMES = 0;
   const eligiblePlayers = allPlayers
     .filter(p => p.games >= MIN_GAMES)
     .sort((a, b) => b.rating - a.rating);
 
-  // Assign ranks
   eligiblePlayers.forEach((p, idx) => p.rank = idx + 1);
 
-// Render rows
-tbody.innerHTML = ""; // clear existing
+  tbody.innerHTML = "";
 
-eligiblePlayers.forEach(p => {
-  const race = mostPlayedRace(p.races);
-  const playerName = names[p.id] || p.id;
+  eligiblePlayers.forEach(p => {
+    const race = mostPlayedRace(p.races);
+    const playerName = names[p.id] || p.id;
 
-  const row = document.createElement("tr");
-  row.classList.add("clickable");
+    const row = document.createElement("tr");
+    row.classList.toggle("clickable", !isHistoricView);
+
+    row.innerHTML = `
+      <td></td>
+      <td>
+        ${maybeLink(p.rank, `player.html?id=${p.id}${seasonQuery}`)}
+      </td>
+      <td class="player-cell">
+        ${maybeLink(
+          `<span class="player-name">${playerName}</span><br>
+           <span class="race-subtext">${race}</span>`,
+          `player.html?id=${p.id}${seasonQuery}`
+        )}
+      </td>
+      <td>
+        ${maybeLink(
+          `<span class="rating-cell">
+             <img src="${ratingToIcon(p.rating)}" alt="" class="rating-icon">
+             <span>${p.rating}</span>
+           </span>`,
+          `player.html?id=${p.id}${seasonQuery}`
+        )}
+      </td>
+      <td>
+        ${maybeLink(`${p.mu.toFixed(0)}`, `player.html?id=${p.id}${seasonQuery}`)}
+      </td>
+      <td>
+        ${maybeLink(`${p.wins}-${p.losses}`, `player.html?id=${p.id}${seasonQuery}`)}
+      </td>
+      <td>
+        ${maybeLink(`${timeAgo(p.ts)}`, `player.html?id=${p.id}${seasonQuery}`)}
+      </td>
+      <td></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+
+  // CLEAN UP THIS SHIT
+ function setupSeasonShift(seasonLabelEl) {
+  const wrap = document.querySelector(".season-wrap");
+  const extra = seasonLabelEl?.querySelector(".season-extra");
+  if (!wrap || !extra || !seasonLabelEl) return;
+
+  const saved = {
+    maxWidth: extra.style.maxWidth,
+    opacity: extra.style.opacity,
+    position: extra.style.position,
+    pointerEvents: extra.style.pointerEvents,
+  };
+
+  // temporarily show green box offscreen
+  extra.style.maxWidth = "none";
+  extra.style.opacity = "0";
+  extra.style.position = "absolute";
+  extra.style.pointerEvents = "none";
+
+  const redRect = seasonLabelEl.getBoundingClientRect();
+  const greenRect = extra.getBoundingClientRect();
+  const gap = parseFloat(getComputedStyle(extra).marginLeft) || 50;
+  const compositeWidth = redRect.width + gap + greenRect.width;
+
+  // restore original styles
+  extra.style.maxWidth = saved.maxWidth;
+  extra.style.opacity = saved.opacity;
+  extra.style.position = saved.position;
+  extra.style.pointerEvents = saved.pointerEvents;
+
+  // apply horizontal shift
+  const shiftX = -((greenRect.width + gap) / 2) - 6;
+  wrap.style.setProperty("--shift-x", `${shiftX}px`);
+}
+
+
+async function loadSeason(seasonNumber, seasonLabelEl) {
+  if (seasonCountdownInterval) {
+  clearInterval(seasonCountdownInterval);
+  seasonCountdownInterval = null;
+  seasonCountdownShowing = false;
+}
+
+
+if (currentSeason === null) return;
+
+  viewingSeason = seasonNumber;
+  isHistoricView = seasonNumber !== currentSeason;
+  document.body.classList.toggle("historic-view", isHistoricView);
+  seasonQuery = isHistoricView ? `&season=${viewingSeason}` : "";
+
+  const start = seasonMeta.seasons[seasonNumber];
+  const end = seasonMeta.seasons[seasonNumber + 1] ?? null;
+
+  updateSeasonLabel(seasonNumber, start, end, seasonLabelEl);
+  setupSeasonShift(seasonLabelEl);
+  if (!isHistoricView && end) {
+  enableSeasonCountdown(seasonLabelEl, end);
+}
+
+
+
+  const [ratings, names] = await Promise.all([
+    fetchNoCache(`data/seasons/${seasonNumber}/ratings.json`).then(r => r.json()),
+    fetchNoCache(`data/seasons/${seasonNumber}/names.json`).then(r => r.json())
+  ]);
+
+  renderLeaderboard(ratings, names);
+}
+
+
+function attachSeasonExtraHandler(seasonLabelEl) {
+  const extraEl = seasonLabelEl?.querySelector(".season-extra");
+  if (!extraEl) return;
+
+  extraEl.addEventListener("click", (ev) => {
+    if (isHistoricView) return;
+
+    ev.stopPropagation();
+
+    if (seasonCountdownShowing) {
+      seasonCountdownShowing = false;
+      clearInterval(seasonCountdownInterval);
+      seasonCountdownInterval = null;
+      extraEl.textContent = seasonCountdownOriginalText;
+    } else {
+      seasonCountdownShowing = true;
+      updateSeasonCountdown(extraEl);
+      seasonCountdownInterval = setInterval(
+        () => updateSeasonCountdown(extraEl),
+        1000
+      );
+    }
+  });
+}
+
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const leaderboardTable = document.querySelector("#leaderboard");
+  if (!leaderboardTable) return;
+  tbody = leaderboardTable.querySelector("tbody");
+  if (!tbody) return;
+
+  ({ season: currentSeason, start: startTime, end: endTime } = await getCurrentSeason());
+  seasonMeta = await fetchNoCache('data/misc_data.json').then(r => r.json());
+
+  let allSeasons = Object.keys(seasonMeta.seasons)
+    .map(Number)
+    .filter(season => season >= 0 && season <= currentSeason)
+    .sort((a, b) => b - a);
+
+  const TEST_EXTRA_SEASONS = false;
+  if (TEST_EXTRA_SEASONS) {
+    const lowest = Math.min(...allSeasons);
+    for (let i = 1; i <= 12; i++) {
+      allSeasons.push(lowest - i);
+      seasonMeta.seasons[lowest - i] = seasonMeta.seasons[lowest] - i * 1000 * 60 * 60 * 24 * 90;
+    }
+    allSeasons.sort((a, b) => b - a);
+  }
+
+  viewingSeason = currentSeason;
+  isHistoricView = false;
+
+  const seasonLabelEl = document.getElementById("season-label");
+  attachSeasonExtraHandler(seasonLabelEl);
+  const seasonPanelEl = document.getElementById("season-panel");
+  const seasonCoreEl = seasonLabelEl?.querySelector(".season-core");
+
+  function rebuildSeasonPanel() {
+    seasonPanelEl.innerHTML = "";
+    const header = document.createElement("div");
+    header.className = "season-header";
+    header.textContent = "Select season";
+    seasonPanelEl.appendChild(header);
+
+    allSeasons.forEach(season => {
+  if (season === viewingSeason) return;
+
+  const start = seasonMeta.seasons[season];
+  const end = seasonMeta.seasons[season + 1] ?? null;
+
+  const row = document.createElement("div");
+  row.className = "season-item";
+  if (season === currentSeason) row.classList.add("current-season");
 
   row.innerHTML = `
-    <!-- Left gutter column -->
-    <td></td>
-
+    <span class="season-number">Season ${season}:</span>
     
-    <td>
-      <a href="player.html?id=${p.id}" class="row-link">
-        ${p.rank}
-      </a>
-    </td>
+    <span class="season-dates">${formatSeasonRange(start, end)}</span>
+  `;
 
-    
-    <td class="player-cell">
-      <a href="player.html?id=${p.id}" class="row-link">
-        <span class="player-name">${playerName}</span><br>
-        <span class="race-subtext">${race}</span>
-      </a>
-    </td>
+  row.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    seasonPanelEl.hidden = true;
+    await loadSeason(season, seasonLabelEl);
+  });
 
-   
-    <td>
-      <a href="player.html?id=${p.id}" class="row-link rating-cell">
-        <img
-          src="${ratingToIcon(p.rating)}"
-          alt=""
-          class="rating-icon"
-        >
-        <span>${p.rating}</span>
-      </a>
-    </td>
-
-    
-    <td>
-      <a href="player.html?id=${p.id}" class="row-link">
-        ${p.mu.toFixed(0)}
-      </a>
-    </td>
-
-    
-    <td>
-      <a href="player.html?id=${p.id}" class="row-link">
-        ${p.wins}-${p.losses}
-      </a>
-    </td>
-
-    
-    <td>
-      <a href="player.html?id=${p.id}" class="row-link">
-        ${timeAgo(p.ts)}
-      </a>
-    </td>
-  <td></td> `;
-
-  tbody.appendChild(row);
+  seasonPanelEl.appendChild(row);
 });
-
-  // Update last updated timestamp
-const lastUpdatedEl = document.getElementById("last-updated");
-if (lastUpdatedEl) {
-  try {
-    const procData = await fetchNoCache("data/misc_data.json").then(r => r.json());
-    const lastProcess = procData.last_process;
-    // convert seconds → milliseconds if value looks too small
-    const tsMs = lastProcess < 1e12 ? lastProcess * 1000 : lastProcess;
-    const relTime = timeAgo(tsMs);
-
-    lastUpdatedEl.innerHTML = 
-      `Match data from <a href="https://shieldbattery.net" target="_blank" rel="noopener noreferrer" style="color:#89CFF0;">ShieldBattery.net</a>. Last updated ${relTime}.`;
-  } catch (err) {
-    console.error("Failed to load proc_data.json:", err);
-    lastUpdatedEl.textContent = "Match data from ShieldBattery.net (last updated: unknown).";
   }
-}
+
+  rebuildSeasonPanel();
+
+  function toggleSeasonPanel(force) {
+    const show = force ?? seasonPanelEl.hidden;
+    seasonPanelEl.hidden = !show;
+  }
+
+  seasonCoreEl?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    rebuildSeasonPanel();
+    toggleSeasonPanel();
+  });
+
+  document.addEventListener("click", () => {
+    if (seasonPanelEl) seasonPanelEl.hidden = true;
+  });
+
+  seasonCoreEl?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      rebuildSeasonPanel();
+      toggleSeasonPanel();
+    }
+  });
+
+  // ------------------------
+  // CLEAN UP THIS SHIT
+  // ------------------------
+  if (seasonLabelEl) {
+    updateSeasonLabel(currentSeason, startTime, endTime, seasonLabelEl);
+    setupSeasonShift(seasonLabelEl); 
+
+    // Season countdown logic
+
+
+
+  }
+
+  // ------------------------
+  // Last updated info
+  // ------------------------
+const lastUpdatedEl = document.getElementById("last-updated");
+  if (lastUpdatedEl) {
+    try {
+      const procData = await fetchNoCache("data/misc_data.json").then(r => r.json());
+      const lastProcess = procData.last_process;
+      const tsMs = lastProcess < 1e12 ? lastProcess * 1000 : lastProcess;
+      const relTime = timeAgo(tsMs);
+      
+      
+      lastUpdatedEl.innerHTML = `Match data from <a href="https://shieldbattery.net" target="_blank" rel="noopener noreferrer" style="color:#89CFF0;">ShieldBattery.net</a>. <span class="last-process-time">Last updated ${relTime}.</span>`;
+    } catch (err) {
+      console.error("Failed to load proc_data.json:", err);
+      lastUpdatedEl.innerHTML = `Match data from <a href="https://shieldbattery.net" target="_blank" rel="noopener noreferrer" style="color:#89CFF0;">ShieldBattery.net</a>.`;
+    }
+  }
+
+  await loadSeason(viewingSeason ?? currentSeason, seasonLabelEl); 
 });

@@ -3,21 +3,125 @@
 // getCurrentSeason(), timeAgo(), mostPlayedRace()
 
 async function loadPlayerPage() {
+
+  // --------------------------------------------------
+  // Helpers
+  // --------------------------------------------------
+
+  async function getAvailablePastSeasons(playerId, currentSeason) {
+    const seasons = [];
+
+    for (let s = 0; s < currentSeason; s++) {
+      try {
+        const res = await fetchNoCache(`data/seasons/${s}/ratings.json`);
+        if (!res.ok) continue;
+
+        const ratings = await res.json();
+        if (ratings && ratings[playerId]) {
+          seasons.push(s);
+        }
+      } catch {
+        // season folder or file missing → ignore
+      }
+    }
+
+    return seasons;
+  }
+
+  function buildSeasonMenu(seasons, viewingSeason, currentSeason, playerId) {
+  const menu = document.getElementById("season-menu");
+  if (!menu) return;
+
+  menu.innerHTML = "";
+
+  // --- Add current season when viewing historic ---
+  if (viewingSeason !== currentSeason) {
+    const currentLink = document.createElement("a");
+    currentLink.href = `player.html?id=${playerId}`;
+    currentLink.textContent = "Current Season";
+    currentLink.className = "season-menu-item";
+
+    menu.appendChild(currentLink);
+  }
+
+  // --- Add historic seasons ---
+  seasons.forEach(s => {
+    if (s === viewingSeason) return;
+
+    const a = document.createElement("a");
+    a.href = `player.html?id=${playerId}&season=${s}`;
+    a.textContent = `Season ${s}`;
+    a.className = "season-menu-item";
+
+    menu.appendChild(a);
+  });
+}
+
+  // --------------------------------------------------
+  // URL + season resolution
+  // --------------------------------------------------
+
   const urlParams = new URLSearchParams(window.location.search);
   const playerId = urlParams.get("id");
   if (!playerId) return;
 
-  const currentSeason = await getCurrentSeason();
+  const currentSeasonObj = await getCurrentSeason();
+  const currentSeason = Number(currentSeasonObj.season);
+
+  const seasonParam = urlParams.get("season");
+  const viewingSeason =
+    seasonParam !== null ? Number(seasonParam) : currentSeason;
+
+ 
+  const pastSeasons = await getAvailablePastSeasons(
+    playerId,
+    currentSeason
+  );
+
+  const toggleBtn = document.getElementById("toggleSeasonMenu");
+  const seasonMenu = document.getElementById("season-menu");
+
+  buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId);
+
+  if (toggleBtn && seasonMenu) {
+    if (pastSeasons.length === 0) {
+      // Nothing to show → hide button entirely
+      toggleBtn.style.display = "none";
+    } else {
+      toggleBtn.style.display = "";
+      toggleBtn.addEventListener("click", () => {
+        seasonMenu.classList.toggle("hidden");
+      });
+    }
+  }
+
+  // --------------------------------------------------
+  // Load season-specific data
+  // --------------------------------------------------
+
+  const baseSeasonPath = `data/seasons/${viewingSeason}`;
 
   const [playerData, names, maps, ratings] = await Promise.all([
-    fetchNoCache(`data/seasons/${currentSeason}/players/${playerId}.json`).then(r => r.json()),
-    fetchNoCache(`data/seasons/${currentSeason}/names.json`).then(r => r.json()),
+    fetchNoCache(`${baseSeasonPath}/players/${playerId}.json`).then(r => r.json()),
+    fetchNoCache(`${baseSeasonPath}/names.json`).then(r => r.json()),
     fetchNoCache("data/maps.json").then(r => r.json()),
-    fetchNoCache(`data/seasons/${currentSeason}/ratings.json`).then(r => r.json())
+    fetchNoCache(`${baseSeasonPath}/ratings.json`).then(r => r.json())
   ]);
 
-  const playerName = names[playerId] || playerId;
-  document.getElementById("playerNameHeader").textContent = playerName;
+  // --------------------------------------------------
+  // Header
+  // --------------------------------------------------
+
+  const headerEl = document.getElementById("playerNameHeader");
+  if (headerEl) {
+    const playerName = names[playerId] || playerId;
+    headerEl.textContent = playerName;
+
+    if (viewingSeason !== currentSeason) {
+      headerEl.textContent += ` (Season ${viewingSeason})`;
+    }
+  }
+
 
   // --- Get full player stats ---
   const allPlayers = Object.entries(ratings).map(([id, v]) => {
@@ -596,7 +700,9 @@ function playerCard(p) {
     <div class="player-card">
       <img src="${raceIcon(race)}" class="race-icon">
 
-      <a href="player.html?id=${id}" class="player-name">${name}</a>
+      <a href="player.html?id=${id}&season=${viewingSeason}" class="player-name">
+        ${name}
+      </a>
 
       <div class="player-points" style="display:flex; align-items:center; gap:7px;">
   <img
@@ -711,46 +817,7 @@ if (opened && !chartLoaded) {
   });
 
 
-let placeholderChartInstance = null;
 
-function loadPlaceholderChart() {
-  const ctx = document.getElementById("extraChart5")?.getContext("2d");
-  if (!ctx) return;
-
-  if (placeholderChartInstance) {
-    placeholderChartInstance.destroy();
-  }
-
-  placeholderChartInstance = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: ["A", "B", "C"],
-      datasets: [{
-        data: [1, 1, 1],
-        backgroundColor: "#333333"
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      indexAxis: "y",
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: false }
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grid: { color: "#222222" },
-          ticks: { color: "#777777" }
-        },
-        y: {
-          ticks: { color: "#777777" }
-        }
-      }
-    }
-  });
-}
 
 
 
@@ -784,7 +851,13 @@ function loadPlaceholderChart() {
   // Fetch season data once
   // ----------------------------------------------------
 async function loadPlayerData(playerId) {
-  const season = await getCurrentSeason();
+  
+
+  const currentSeasonObj = await getCurrentSeason();
+  const season = Number(currentSeasonObj.season);
+
+  
+  
   const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
   if (!res.ok) return null;
 
@@ -1336,7 +1409,14 @@ function switchMatchupChart() {
 
 
 async function loadMatchupChart(playerId) {
-  const season = await getCurrentSeason();
+  
+  const currentSeasonObj = await getCurrentSeason();
+  const season = Number(currentSeasonObj.season);
+
+
+  
+
+
   const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
   if (!res.ok) return;
 
@@ -1812,7 +1892,14 @@ function updateDrawer3ChartIndicator(mode) {
 // Drawer 3
 // ======================================================================
 async function loadDrawer3Chart(playerId) {
-  const season = await getCurrentSeason();
+  
+
+  const currentSeasonObj = await getCurrentSeason();
+const season = Number(currentSeasonObj.season);
+
+  
+
+
   const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
   if (!res.ok) return;
 
@@ -2347,7 +2434,12 @@ function updateExtraChart4Height(barCount) {
 }
 
 async function loadDrawer4Chart(playerId) {
-  const season = await getCurrentSeason();
+  
+  const currentSeasonObj = await getCurrentSeason();
+const season = Number(currentSeasonObj.season);
+
+
+
 
   let stats, names;
   try {

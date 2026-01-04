@@ -1,359 +1,398 @@
-
-
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Customs Ladder</title>
     <link rel="stylesheet" href="style.css" />
-   <style>
+    <style>
+        /* ========================= Base layout & typography ========================= */
+        body {
+            color: #ddd;
+            text-align: center;
+        }
 
+        .row-link {
+            display: block;
+            width: 100%;
+            height: 100%;
+            color: inherit;
+            text-decoration: none;
+        }
 
-body {
-    color: #ddd;
-    text-align: center;
+        /* ========================= Header ========================= */
+        header {
+            margin: 2px 0 26px 0;
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        header p {
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+        .last-updated {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+body.historic-view .last-process-time {
+    display: none;
 }
 
 
-.row-link {
-    display: block;
-    width: 100%;
-    height: 100%;
-    color: inherit;
-    text-decoration: none;
+        /* ========================= Season label + hover ========================= */
+        .season-wrap {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 7px;
+            margin-top: 5px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            transition: transform 0.15s ease;
+        }
+
+        .season-wrap::after {
+            content: "";
+            position: absolute;
+            top: -8px;
+            bottom: -8px;
+            left: 100%;
+            width: 12px;
+            pointer-events: auto;
+        }
+
+        /* Hover expansion */
+        .season-wrap:hover .season-extra {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .season-wrap:hover {
+            transform: translateX(var(--shift-x));
+        }
+
+        /* ========================= Season extra (green) ========================= */
+        .season-extra {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            margin-left: 6px;
+            background: #44935F;
+            color: white;
+            white-space: nowrap;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 7px;
+            opacity: 0;
+            transform: translateX(-6px) scale(0.95);
+            pointer-events: none;
+            transition:
+                opacity 0.08s ease,
+                transform 0.12s ease;
+            will-change: opacity, transform;
+        }
+
+        .season-extra:hover {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .season-wrap,
+        .season-extra {
+            line-height: 1.2;
+        }
+
+        /* ===== HISTORIC MODE: season extra ===== */
+        body.historic-view .season-wrap:hover .season-extra {
+            max-width: 450px;
+        }
+
+        /* ========================= Season dropdown panel ========================= */
+        .season-panel {
+            position: absolute;
+            top: 60%;
+            right: 45%;
+            background: #e74c3c;
+            border-radius: 6px;
+            padding: 6px 0;
+            min-width: 240px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 9999;
+            transform-origin: top right;
+        }
+
+        .season-panel .season-item {
+            padding: 6px 12px;
+            color: #fff;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .season-item {
+            cursor: pointer;
+        }
+
+        .season-item:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .season-item.current-season {
+            background: rgba(255,255,255,0.15);
+            font-weight: 600;
+        }
+
+        .season-item.current-season .season-dates {
+            color: #fff;
+        }
+
+        .season-panel .season-dates {
+            color: #ffd6d1;
+            font-size: 0.8rem;
+        }
+
+        .season-header {
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            opacity: 0.9;
+            padding: 6px 10px;
+            pointer-events: none;
+        }
+
+        /* ========================= Table layout ========================= */
+        .content-container {
+            width: 1100px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .table-wrapper {
+            display: inline-block;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 6px rgba(0,0,0,0.4);
+        }
+
+        .table-wrapper table {
+            width: 1100px;
+            border-collapse: collapse;
+            margin: 0;
+            background-color: #1e1e1e;
+        }
+
+        .leaderboard-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        th, td {
+            padding: 10px 14px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #2a2a2a;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        tr:nth-child(even) {
+            background-color: #2a2a2a;
+        }
+
+        tr:hover {
+            background-color: #3a3a3a;
+        }
+
+        tr.clickable {
+            cursor: pointer;
+        }
+
+        tr.clickable:hover td {
+            color: #fff;
+        }
+
+        tr:hover .row-link, tr:hover td a.row-link {
+            color: #fff !important;
+        }
+
+        td a.row-link {
+            color: inherit !important;
+        }
+
+        /* ========================= HISTORIC MODE: table ========================= */
+        body.historic-view tr {
+            cursor: default;
+        }
+
+        body.historic-view tr:hover {
+            background-color: transparent !important;
+        }
+
+        body.historic-view tr:hover td {
+            color: inherit !important;
+        }
+
+        body.historic-view tr.clickable {
+            pointer-events: none;
+        }
+
+        body.historic-view td, body.historic-view th {
+            user-select: none;
+        }
+
+        /* ========================= Column sizing ========================= */
+        .col-gutter-left {
+            width: 42px;
+        }
+
+        .leaderboard-table col.col-rank {
+            width: 172px;
+        }
+
+        .leaderboard-table col.col-player {
+            width: 220px;
+        }
+
+        .leaderboard-table col.col-rating {
+            width: 142px;
+        }
+
+        .leaderboard-table col.col-mmr {
+            width: 142px;
+        }
+
+        .leaderboard-table col.col-wl {
+            width: 142px;
+        }
+
+        .leaderboard-table col.col-lastplayed {
+            width: 180px;
+        }
+
+        .col-gutter-right {
+            width: 72px;
+        }
+
+        .leaderboard-table th:first-child, .leaderboard-table td:first-child {
+            padding-left: 76px;
+        }
+
+        .leaderboard-table th:last-child, .leaderboard-table td:last-child {
+            padding-right: 76px;
+        }
+
+        /* ========================= Player & rating cells ========================= */
+        .player-cell {
+            color: #89CFF0;
+            font-size: 1.2rem;
+            text-align: left;
+        }
+
+        .leaderboard-table td.player-cell a {
+            display: block;
+            min-width: 0;
+        }
+
+        .race-subtext {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .rating-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rating-icon {
+            width: 36px;
+            height: 18px;
+            object-fit: contain;
+        }
+
+        body.historic-view table, body.historic-view tr, body.historic-view td, body.historic-view th {
+            pointer-events: none;
+        }
+
+html {
+    scrollbar-gutter: stable both-edges;
 }
 
 
-header {
-    margin: 2px 0 26px 0; 
-}
-
-header h1 {
-    font-size: 3.5rem;
-    font-weight: bold;
-    margin: 0;
-}
-
-
-header p {
-    color: #aaa;
-    margin-top: 4px;
-}
-
-
-.last-updated {
-    font-size: 0.8rem;
-    color: #888;
-    margin-bottom: 20px;
-}
-
-
-.season-wrap {
-    display: inline-block;
-    position: relative;
-    transition: transform 0.25s ease;
-    cursor: default;
-
-    /* optional: slightly enlarge hover area */
-    padding: 2px 4px;
-}
-
-.season-wrap::before {
-    content: "";
-    position: absolute;
-    left: -4px;   /* small buffer */
-    right: -4px;
-    top: -4px;
-    bottom: -4px;
-}
-
-.season-wrap:hover #season-label .season-extra {
-    max-width: 200px;
-    opacity: 1;
-    padding: 1px 6px;
-}
-
-.season-wrap:hover {
-    transform: translateX(var(--shift-x));
-}
-
-#season-label {
-    user-select: none;
-    position: relative;
-    display: inline-block;
-
-    background-color: #e74c3c;
-    color: white;
-    padding: 3px 6px;
-    border-radius: 4px;
-}
-
-.season-extra {
-    user-select: none;
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-left: 6px;
-
-    background: #44935F;
-    white-space: nowrap;
-    border-radius: 4px;
-    
-    opacity: 0;
-    max-width: 0;
-    overflow: hidden;
-
-    display: flex;            /* center content */
-    align-items: center;      /* vertical centering */
-    
-
-    min-height: 22px;         /* makes box taller */
-              
-
-    transition:
-        max-width 0.05s ease,
-        opacity 0.04s ease,
-        padding 0.04s ease;
-}
-
-
-
-.content-container {
-    width: 1100px; 
-    margin: 0 auto;
-    padding: 0; 
-}
-
-
-.table-wrapper {
-    display: inline-block;
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
-}
-
-.table-wrapper table {
-    width: 1100px; 
-    border-collapse: collapse;
-    margin: 0;
-    background-color: #1e1e1e;
-}
-
-
-.leaderboard-table {
-    table-layout: fixed;
-    width: 100%;
-}
-
-
-th,
-td {
-    padding: 10px 14px;
-    text-align: center;
-    
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-th {
-    background-color: #2a2a2a;
-    color: #fff;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
-}
-
-.text-left {
-    text-align: left;
-}
-
-
-
-
-tr:nth-child(even) {
-    background-color: #2a2a2a;
-}
-
-
-tr:hover {
-    background-color: #3a3a3a;
-}
-
-
-tr.clickable {
-    cursor: pointer;
-}
-
-tr.clickable:hover td {
-    color: #fff;
-}
-
-
-tr:hover .row-link,
-tr:hover td a.row-link {
-    color: #fff !important; 
-}
-
-
-td a.row-link {
-    color: inherit !important; 
-}
-
-
-
-.col-gutter-left { width: 42px; } 
-.leaderboard-table col.col-rank { width: 172px; }
-.leaderboard-table col.col-player { width: 220px; }
-.leaderboard-table col.col-rating { width: 142px; }
-.leaderboard-table col.col-mmr { width: 142px; }
-
-.leaderboard-table col.col-wl { width: 142px; }
-.leaderboard-table col.col-lastplayed { width: 180px; }
-.col-gutter-right { width: 72px; } 
-
-
-.leaderboard-table th:first-child,
-.leaderboard-table td:first-child {
-    padding-left: 76px;
-}
-
-.leaderboard-table th:last-child,
-.leaderboard-table td:last-child {
-    padding-right: 76px;
-}
-
-.player-cell {
-    
-    color: #89CFF0;
-    font-size: 1.2rem;
-    text-align: left
-}
-
-
-
-.leaderboard-table td.player-cell a {
-    display: block;
-    min-width: 0; 
-}
-
-.race-subtext {
-    font-size: 0.8rem;
-    color: #aaa;
-}
-
-
-.rating-cell {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.rating-icon {
-    width: 36px;
-    height: 18px;
-    object-fit: contain;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</style>
+    </style>
 </head>
 <body>
-  <div class="content-container">
-    <div class="link-wrapper">
-      <a href="statistics.html" class="link">Statistics</a>
-      <a href="about.html" class="link">About</a>
+    <div class="content-container">
+        <div class="link-wrapper">
+            <a href="statistics.html" class="link">Statistics</a>
+            <a href="about.html" class="link">About</a>
+        </div>
+        <header>
+            <h1>The Customs Ladder</h1>
+            <span id="season-label" role="button" tabindex="0" class="season-wrap">
+                <span class="season-core">Season</span>
+                <span class="season-extra">Jan–Mar 2025</span>
+            </span>
+            <div id="season-panel" class="season-panel" hidden></div>
+            <div id="season-info"></div>
+        </header>
+        <div class="last-updated" id="last-updated"></div>
+        <div class="table-wrapper">
+            <table id="leaderboard" class="leaderboard-table">
+                <colgroup>
+                    <col class="col-gutter-left">
+                    <col class="col-rank">
+                    <col class="col-player">
+                    <col class="col-points">
+                    <col class="col-mmr">
+                    <col class="col-wl">
+                    <col class="col-lastplayed">
+                    <col class="col-gutter-right">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Rank</th>
+                        <th class="text-left">Player</th>
+                        <th class="text-left">Points</th>
+                        <th>MMR</th>
+                        <th>Win/Loss</th>
+                        <th>Last Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <script src="script.js"></script>
     </div>
-
-    <header>
-      <h1>The Customs Ladder</h1>
-      <p class="season-wrap">
-  <span id="season-label">
-    <span class="season-core">Season 3</span>
-    <span class="season-extra">Jan–Mar 2025</span>
-  </span>
-</p>
-      <div id="season-info"></div>
-    </header>
-
-    <div class="last-updated" id="last-updated"></div>
-
-    <div class="table-wrapper">
-      <table id="leaderboard" class="leaderboard-table">
-        <!-- Fixed column sizing -->
-      <colgroup>
-  <col class="col-gutter-left">
-  <col class="col-rank">
-  <col class="col-player">
-  <col class="col-points">
-  <col class="col-mmr">
-  <col class="col-wl">
-  <col class="col-lastplayed">
-  <col class="col-gutter-right"> </colgroup>
-</colgroup>
-
-
-
-
-
-<thead>
-  <tr>
-    <th></th> <th>Rank</th>
-    <th class="text-left">Player</th>
-
-
-    <th class="text-left">Points</th>
-
-    
-    <th>MMR</th>
-    <th>Win/Loss</th>
-    <th>Last Active</th>
-    <th></th> </tr>
-</thead>
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <script src="script.js"></script>
-
-
-
-  </div>
-
-
 </body>
 </html>
