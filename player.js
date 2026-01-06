@@ -111,11 +111,11 @@ if (viewingSeason !== currentSeason) {
 
 
 
-  buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId, showCurrentSeasonLink);
+buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId, showCurrentSeasonLink);
 
 if (toggleBtn && seasonMenu) {
   const hasItems = seasonMenu.children.length > 0;
-  toggleBtn.style.display = hasItems ? "" : "none";
+  toggleBtn.style.display = hasItems ? "" : "none";   
   seasonMenu.style.display = hasItems ? "" : "none";
 
   if (hasItems) {

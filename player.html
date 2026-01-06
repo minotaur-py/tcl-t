@@ -478,6 +478,10 @@ body tr:hover {
   margin-top: -6px; /* Adjust this number to get the exact distance you want */
 }
 
+.hidden {
+  display: none !important;
+}
+
 
 </style>
 </head>
@@ -502,7 +506,7 @@ body tr:hover {
       <button id="toggleExtraStats" class="extra-stats-btn">
         Show additional statistics
       </button>
-      <button id="toggleSeasonMenu" class="extra-stats-btn">
+      <button id="toggleSeasonMenu" class="extra-stats-btn hidden">
           Select season
       </button>
     <div id="season-menu" class="season-menu hidden"></div>
