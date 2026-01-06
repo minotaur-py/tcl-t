@@ -138,12 +138,22 @@ function enableSeasonCountdown(seasonLabelEl, endTime) {
 
 
 
-
+/*
 function maybeLink(inner, href) {
   return isHistoricView
     ? `<span class="row-static">${inner}</span>`
     : `<a href="${href}" class="row-link">${inner}</a>`;
 }
+
+
+*/
+
+function maybeLink(inner, href) {
+  // always return a link, regardless of historic view
+  return `<a href="${href}" class="row-link${isHistoricView ? " historic-link" : ""}">${inner}</a>`;
+}
+
+
 
 function ratingToIcon(rating) {
   let bucket;
