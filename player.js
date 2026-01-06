@@ -2,6 +2,15 @@
 // Assumes script.js is loaded first and provides:
 // getCurrentSeason(), timeAgo(), mostPlayedRace()
 
+
+
+const raceColors = {
+    Protoss: "#EBD678",
+    Terran: "#53B3FC",
+    Zerg: "#C1A3F5",
+    Random: "#AABBCB"
+  };
+
 async function loadPlayerPage() {
 
   // --------------------------------------------------
@@ -28,19 +37,33 @@ async function loadPlayerPage() {
     return seasons;
   }
 
-  function buildSeasonMenu(seasons, viewingSeason, currentSeason, playerId) {
+  async function hasPlayerDataInSeason(playerId, season) {
+  try {
+    const res = await fetchNoCache(`data/seasons/${season}/ratings.json`);
+    if (!res.ok) return false;
+    const ratings = await res.json();
+    return !!ratings[playerId];
+  } catch {
+    return false;
+  }
+}
+
+
+
+
+
+ function buildSeasonMenu(seasons, viewingSeason, currentSeason, playerId, showCurrent) {
   const menu = document.getElementById("season-menu");
   if (!menu) return;
 
   menu.innerHTML = "";
 
-  // --- Add current season when viewing historic ---
-  if (viewingSeason !== currentSeason) {
+  // --- Add current season when viewing historic AND data exists ---
+  if (showCurrent) {
     const currentLink = document.createElement("a");
     currentLink.href = `player.html?id=${playerId}`;
     currentLink.textContent = "Current Season";
     currentLink.className = "season-menu-item";
-
     menu.appendChild(currentLink);
   }
 
@@ -81,19 +104,26 @@ async function loadPlayerPage() {
   const toggleBtn = document.getElementById("toggleSeasonMenu");
   const seasonMenu = document.getElementById("season-menu");
 
-  buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId);
+  let showCurrentSeasonLink = false;
+if (viewingSeason !== currentSeason) {
+  showCurrentSeasonLink = await hasPlayerDataInSeason(playerId, currentSeason);
+}
 
-  if (toggleBtn && seasonMenu) {
-    if (pastSeasons.length === 0) {
-      // Nothing to show → hide button entirely
-      toggleBtn.style.display = "none";
-    } else {
-      toggleBtn.style.display = "";
-      toggleBtn.addEventListener("click", () => {
-        seasonMenu.classList.toggle("hidden");
-      });
-    }
+
+
+  buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId, showCurrentSeasonLink);
+
+if (toggleBtn && seasonMenu) {
+  const hasItems = seasonMenu.children.length > 0;
+  toggleBtn.style.display = hasItems ? "" : "none";
+  seasonMenu.style.display = hasItems ? "" : "none";
+
+  if (hasItems) {
+    toggleBtn.addEventListener("click", () => {
+      seasonMenu.classList.toggle("hidden");
+    });
   }
+}
 
   // --------------------------------------------------
   // Load season-specific data
@@ -161,44 +191,11 @@ const points = Math.round(playerStats.points);
   const mostPlayed = mostPlayedRace(countsForFunction);
 
 
-  const raceColors = {
-    Protoss: "#EBD678",
-    Terran: "#53B3FC",
-    Zerg: "#C1A3F5",
-    Random: "#AABBCB"
-  };
+  
   const mostPlayedColor = raceColors[mostPlayed] || "#AABBCB"; 
 
 
-function ratingToIcon(rating) {                                 /* already in script.js - dedupe */
-  // determine bucket value (the third element in your ranges table)
-  let bucket;
-  if (rating <= 399) bucket = 0;
-  else if (rating <= 849) bucket = 1;
-  else if (rating <= 1999) bucket = 2;
-  else if (rating <= 2999) bucket = 3;
-  else if (rating <= 3999) bucket = 4;
-  else if (rating <= 4999) bucket = 5;
-  else if (rating <= 5999) bucket = 6;
-  else if (rating <= 6999) bucket = 7;
-  else if (rating <= 7999) bucket = 8;
-  else if (rating <= 8999) bucket = 9;
-  else if (rating <= 10499) bucket = 10;
-  else if (rating <= 11999) bucket = 11;
-  else if (rating <= 14499) bucket = 12;
-  else bucket = 13;
 
-  // map bucket → icon file
-  if (bucket <= 1) return "icons/d1.jpg";
-  if (bucket === 2) return "icons/d2.jpg";
-  if (bucket === 3) return "icons/d3.jpg";
-
-  if (bucket >= 4 && bucket <= 6) return `icons/c${bucket - 3}.jpg`;
-  if (bucket >= 7 && bucket <= 9) return `icons/b${bucket - 6}.jpg`;
-  if (bucket >= 10 && bucket <= 12) return `icons/a${bucket - 9}.jpg`;
-
-  return "icons/s.jpg";
-}
 
 
   const raceDisplayHTML = `
@@ -278,12 +275,7 @@ function ratingToIcon(rating) {                                 /* already in sc
     }
 
     const races = ["Protoss", "Terran", "Zerg", "Random"];
-    const raceColors = {
-      Protoss: "#EBD678",
-      Terran: "#53B3FC",
-      Zerg: "#C1A3F5",
-      Random: "#AABBCB"
-    };
+
 
     const raceCounts = playerStats.races;
     const raceWins = playerStats.winsByRace;
@@ -1181,11 +1173,7 @@ function formatValue(value, mode) {
     document.body.appendChild(tooltipEl);
   }
 
-  const raceColors = {
-    Protoss: "#EBD678",
-    Terran: "#53B3FC",
-    Zerg:   "#C1A3F5"
-  };
+
 
   const labelToKey = { Protoss: "p", Terran: "t", Zerg: "z" };
 
