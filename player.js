@@ -115,15 +115,22 @@ buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId, showCurrent
 
 if (toggleBtn && seasonMenu) {
   const hasItems = seasonMenu.children.length > 0;
-  toggleBtn.style.display = hasItems ? "" : "none";   
-  seasonMenu.style.display = hasItems ? "" : "none";
 
   if (hasItems) {
+    // 1. Remove the hidden class from the button so it can be seen
+    toggleBtn.classList.remove("hidden"); 
+
+    // 2. Set up the toggle for the menu
     toggleBtn.addEventListener("click", () => {
       seasonMenu.classList.toggle("hidden");
     });
+  } else {
+    // 3. Ensure they stay hidden if there are no items
+    toggleBtn.classList.add("hidden");
+    seasonMenu.classList.add("hidden");
   }
 }
+
 
   // --------------------------------------------------
   // Load season-specific data
