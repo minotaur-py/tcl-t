@@ -71,7 +71,7 @@ async function loadPlayerPage() {
   const seasonParam = urlParams.get("season");
   const viewingSeason =
     seasonParam !== null ? Number(seasonParam) : currentSeason;
-
+  window.viewingSeason = viewingSeason; /* need it for drawer stats */
  
   const pastSeasons = await getAvailablePastSeasons(
     playerId,
@@ -136,14 +136,15 @@ async function loadPlayerPage() {
     };
   });
 
-  const MIN_GAMES = 10;
-  const eligiblePlayers = allPlayers.filter(p => p.games >= MIN_GAMES).sort((a, b) => b.points - a.points);
-  const playerStats = allPlayers.find(p => p.id === playerId);
-  if (!playerStats) return;
 
-  const rankPlayer = eligiblePlayers.find(p => p.id === playerId);
-  const points = playerStats.points.toFixed(0);
-  const rank = rankPlayer ? eligiblePlayers.indexOf(rankPlayer) + 1 : "—";
+const rankedPlayers = rankPlayers(allPlayers, names);
+
+
+const playerStats = rankedPlayers.find(p => p.id === playerId);
+if (!playerStats) return;
+
+const rank = playerStats.rank ?? "—";
+const points = Math.round(playerStats.points);
   const mmr = playerStats.mu.toFixed(2);
   const winrate = ((playerStats.wins / playerStats.games) * 100).toFixed(1);
 
@@ -810,7 +811,7 @@ if (opened && !chartLoaded) {
     loadMatchupChart(playerId);   // PWM
     loadDrawer3Chart(playerId);   // 
     loadDrawer4Chart(playerId);
-    loadPlaceholderChart();
+    
     chartLoaded = true;
   }
 }
@@ -853,8 +854,7 @@ if (opened && !chartLoaded) {
 async function loadPlayerData(playerId) {
   
 
-  const currentSeasonObj = await getCurrentSeason();
-  const season = Number(currentSeasonObj.season);
+  const season = window.viewingSeason;
 
   
   
@@ -1410,8 +1410,7 @@ function switchMatchupChart() {
 
 async function loadMatchupChart(playerId) {
   
-  const currentSeasonObj = await getCurrentSeason();
-  const season = Number(currentSeasonObj.season);
+  const season = window.viewingSeason;
 
 
   
@@ -1894,8 +1893,7 @@ function updateDrawer3ChartIndicator(mode) {
 async function loadDrawer3Chart(playerId) {
   
 
-  const currentSeasonObj = await getCurrentSeason();
-const season = Number(currentSeasonObj.season);
+const season = window.viewingSeason;
 
   
 
@@ -2435,8 +2433,7 @@ function updateExtraChart4Height(barCount) {
 
 async function loadDrawer4Chart(playerId) {
   
-  const currentSeasonObj = await getCurrentSeason();
-const season = Number(currentSeasonObj.season);
+const season = window.viewingSeason;
 
 
 

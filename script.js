@@ -10,6 +10,9 @@ let seasonCountdownShowing = false;
 let seasonCountdownOriginalText = "";
 let seasonCountdownEndTime = null;
 
+
+
+
 function fetchNoCache(url) {
   return fetch(`${url}?v=${Date.now()}`);
 }
@@ -51,6 +54,41 @@ async function getCurrentSeason() {
 
   return result;
 }
+
+function rankPlayers(players, names) {
+  // sort with tie-breaking rules
+  const sorted = [...players].sort((a, b) => {
+    // 1) points
+    if (b.points !== a.points) return b.points - a.points;
+
+    // 2) MMR
+    if (b.mu !== a.mu) return b.mu - a.mu;
+
+    // 3) name (stable + deterministic)
+    const nameA = (names[a.id] || a.id).toLowerCase();
+    const nameB = (names[b.id] || b.id).toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
+  // competition ranking (1,2,2,4)
+  let currentRank = 0;
+  let lastKey = null;
+
+  sorted.forEach((p, idx) => {
+    const key = `${p.points}|${p.mu}`;
+
+    if (key !== lastKey) {
+      currentRank = idx + 1;
+      lastKey = key;
+    }
+
+    p.rank = currentRank;
+  });
+
+  return sorted;
+}
+
+
 
 
 
@@ -228,16 +266,17 @@ function renderLeaderboard(ratings, names) {
     };
   });
 
-  const MIN_GAMES = 0;
-  const eligiblePlayers = allPlayers
-    .filter(p => p.games >= MIN_GAMES)
-    .sort((a, b) => b.rating - a.rating);
-
-  eligiblePlayers.forEach((p, idx) => p.rank = idx + 1);
+const rankedPlayers = rankPlayers(
+  allPlayers.map(p => ({
+    ...p,
+    points: p.rating   // adapt leaderboard "rating" to ranking "points"
+  })),
+  names
+);
 
   tbody.innerHTML = "";
 
-  eligiblePlayers.forEach(p => {
+  rankedPlayers.forEach(p => {
     const race = mostPlayedRace(p.races);
     const playerName = names[p.id] || p.id;
 
