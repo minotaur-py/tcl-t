@@ -463,38 +463,67 @@ document.addEventListener("DOMContentLoaded", async () => {
   const seasonPanelEl = document.getElementById("season-panel");
   const seasonCoreEl = seasonLabelEl?.querySelector(".season-core");
 
-  function rebuildSeasonPanel() {
-    seasonPanelEl.innerHTML = "";
-    const header = document.createElement("div");
-    header.className = "season-header";
-    header.textContent = "Select season";
-    seasonPanelEl.appendChild(header);
 
-    allSeasons.forEach(season => {
-  if (season === viewingSeason) return;
+function buildSeasonPanel(panelEl, seasonLabelEl) {
+  panelEl.innerHTML = "";
 
-  const start = seasonMeta.seasons[season];
-  const end = seasonMeta.seasons[season + 1] ?? null;
+  const header = document.createElement("div");
+  header.className = "season-header";
+  header.textContent = "Select season";
+  panelEl.appendChild(header);
 
-  const row = document.createElement("div");
-  row.className = "season-item";
-  if (season === currentSeason) row.classList.add("current-season");
+  allSeasons.forEach(season => {
+    if (season === viewingSeason) return;
 
-  row.innerHTML = `
-    <span class="season-number">Season ${season}:</span>
-    
-    <span class="season-dates">${formatSeasonRange(start, end)}</span>
-  `;
+    const start = seasonMeta.seasons[season];
+    const end = seasonMeta.seasons[season + 1] ?? null;
 
-  row.addEventListener("click", async (e) => {
-    e.stopPropagation();
-    seasonPanelEl.hidden = true;
-    await loadSeason(season, seasonLabelEl);
+    const row = document.createElement("div");
+    row.className = "season-item";
+    if (season === currentSeason) row.classList.add("current-season");
+
+    row.innerHTML = `
+  <span class="season-number">Season ${season}</span>
+
+  <span class="season-dates-grid">
+    <span class="season-date from">${formatDate(start)}</span>
+    <span class="season-date dash">–</span>
+    <span class="season-date to">${end ? formatDate(end) : ""}</span>
+  </span>
+`;
+
+    row.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      panelEl.hidden = true;
+      await loadSeason(season, seasonLabelEl);
+    });
+
+    panelEl.appendChild(row);
   });
+}
 
-  seasonPanelEl.appendChild(row);
+const archiveBtn = document.getElementById("archive-season-toggle");
+const archivePanel = document.getElementById("archive-season-panel");
+
+archiveBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+
+  // close main panel if open
+  seasonPanelEl.hidden = true;
+
+  buildSeasonPanel(archivePanel, seasonLabelEl);
+  archivePanel.hidden = !archivePanel.hidden;
 });
-  }
+
+document.addEventListener("click", () => {
+  archivePanel.hidden = true;
+});
+
+  function rebuildSeasonPanel() {
+  buildSeasonPanel(seasonPanelEl, seasonLabelEl);
+}
+
+
 
   rebuildSeasonPanel();
 

@@ -25,7 +25,7 @@
         }
 
         header h1 {
-            font-size: 3.5rem;
+            font-size: 3.8rem;
             font-weight: bold;
             margin: 0;
         }
@@ -135,12 +135,16 @@ body.historic-view .last-process-time {
         }
 
         .season-panel .season-item {
+            display: grid !important;
+            grid-template-columns: auto max-content;
+            
+            column-gap: 16px;
             padding: 6px 12px;
             color: #fff;
             white-space: nowrap;
             font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
+            
+            
             align-items: center;
             gap: 10px;
         }
@@ -335,10 +339,124 @@ body.historic-view .last-process-time {
 
         
 
+
+
+
 html {
     scrollbar-gutter: stable both-edges;
 }
 
+
+
+.archive-button {
+  background: none;     
+  border: none;         
+  padding: 0;           
+  margin: 0;            
+  cursor: pointer;      
+  line-height: 0;       
+  display: inline-block; 
+  
+  padding: 0 0 0 20px;
+  position: relative;
+}
+
+.archive-button img {
+  display: block;       
+}
+
+
+/* .season-panel--archive {
+  background: #1c1c1c;
+  border-color: #444;
+  color: #bbb;
+  top: calc(39% + 6px);
+  left: 30%;
+  transform: none;
+
+} */
+
+
+
+.season-panel--archive {
+  position: absolute;
+  top: calc(22.1% + 6px);
+  right: 21.8%;
+  left: auto;
+
+  background: #1E1E1E; /*1E1E1E  */
+  color: #c2c2c2;
+
+  padding: 10px 0;
+  min-width: 290px;
+  border: 1px solid #2A2A2A;
+  /*border: 1px solid #444;*/
+  border-radius: 10px;
+
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+  z-index: 9999;
+}
+
+/* Header */
+.season-panel--archive .season-header {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: #FFFFFF;
+  padding: 6px 12px 16px;
+  /*border-bottom: 1px solid #2f2f2f; */
+  pointer-events: none;
+}
+
+/* Each season row */
+.season-panel--archive .season-item {
+  display: grid;
+  grid-template-columns: auto max-content; 
+  align-items: center;
+  column-gap: 16px;
+
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #d6d6d6;
+  padding: 6px 14px;
+
+  text-transform: none;
+  cursor: pointer;
+  text-align: left; 
+
+  transition:
+    background-color 0.08s ease,
+    color 0.08s ease;
+}
+
+.season-panel--archive .season-item:hover {
+  background: #2f2f2f;
+  color: #e0e0e0;
+}
+
+.season-panel--archive .current-season {
+  opacity: 0.8;
+}
+
+.season-panel--archive .season-dates-grid {
+  display: grid;
+  grid-template-columns: 5ch 7ch 5ch; 
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+  padding: 0 8px 0 0;
+}
+
+.season-panel--archive .season-date {
+  font-size: 0.78rem;
+  color: #8a8a8a;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.season-panel--archive .season-date.from { text-align: left; }
+.season-panel--archive .season-date.dash { text-align: center; }
+.season-panel--archive .season-date.to   { text-align: left; }
 
     </style>
 </head>
@@ -379,7 +497,19 @@ html {
                         <th>MMR</th>
                         <th>Win/Loss</th>
                         <th>Last Active</th>
-                        <th></th>
+                        <th>
+  <div class="archive-wrap">
+    <button type="button"
+            class="archive-button"
+            id="archive-season-toggle">
+      <img src="icons/fc.jpg" width="20" height="19">
+    </button>
+
+    <div id="archive-season-panel"
+         class="season-panel season-panel--archive"
+         hidden></div>
+  </div>
+</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
