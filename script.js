@@ -67,9 +67,12 @@ function withSeason(url, season) {
   if (season === null || season === undefined) return url;
   if (season === currentSeason) return url;
 
-  const u = new URL(url, window.location.origin);
+  
+  const u = new URL(url, window.location.href);
   u.searchParams.set("season", season);
-  return u.pathname + "?" + u.searchParams.toString();
+  
+  
+  return u.pathname + u.search;
 }
 
 
