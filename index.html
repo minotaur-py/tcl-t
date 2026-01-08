@@ -48,9 +48,10 @@ body.historic-view .last-process-time {
 
         /* ========================= Season label + hover ========================= */
         .season-wrap {
+            position: relative;
             display: inline-flex;
             align-items: center;
-            cursor: pointer;
+            
             user-select: none;
             background-color: #e74c3c;
             color: white;
@@ -60,6 +61,12 @@ body.historic-view .last-process-time {
             font-size: 1.1rem;
             transition: transform 0.08s ease;
         }
+
+
+        /*body.historic-view .season-wrap {
+            background-color: #B13D35; 
+            color: #ccc;            
+        }*/
 
         .season-wrap::after {
             content: "";
@@ -82,6 +89,9 @@ body.historic-view .last-process-time {
             transform: translateX(var(--shift-x));
         }
 
+
+       
+
         /* ========================= Season extra (green) ========================= */
         .season-extra {
             position: absolute;
@@ -98,11 +108,14 @@ body.historic-view .last-process-time {
             opacity: 0;
             transform: translateX(-6px) scale(0.95);
             pointer-events: none;
+            cursor: pointer;
             transition:
                 opacity 0.04s ease,
                 transform 0.06s ease;
             will-change: opacity, transform;
         }
+
+       
 
         .season-extra:hover {
             opacity: 1;
@@ -362,7 +375,8 @@ html {
 }
 
 .archive-button img {
-  display: block;       
+  display: block; 
+  user-select: none;      
 }
 
 
@@ -468,11 +482,11 @@ html {
         </div>
         <header>
             <h1>The Customs Ladder</h1>
-            <span id="season-label" role="button" tabindex="0" class="season-wrap">
+            <span id="season-label" class="season-wrap">
                 <span class="season-core">Season</span>
                 <span class="season-extra">Jan–Mar 2025</span>
             </span>
-            <div id="season-panel" class="season-panel" hidden></div>
+            
             <div id="season-info"></div>
         </header>
         <div class="last-updated" id="last-updated"></div>

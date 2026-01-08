@@ -38,6 +38,31 @@ body tr:hover {
   background-color: initial;
 }
 
+#playerNameHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.season-indicator {
+  font-size: 0.45em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  padding: 3px 9px;
+  border-radius: 999px;
+
+  background: #B13D35;         /* muted red */
+  color: #f2dada;
+  
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.06) inset,
+    0 1px 4px rgba(0,0,0,0.4);
+}
+
+
 
 #player-overview {
   margin: 30px 0 24px;
@@ -451,29 +476,32 @@ body tr:hover {
   }
 }
 
-.season-menu {
-  margin-top: 8px;
+.playeroverview-title-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  position: relative;
 }
 
-.season-menu.hidden {
+
+.season-archive-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   display: none;
 }
 
-.season-menu-item {
-  color: #ccc;
-  text-decoration: none;
-  font-size: 0.9em;
+.season-archive-btn img {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  opacity: 0.85;
 }
 
-.season-menu-item:hover {
-  color: white;
-}
-
-#toggleSeasonMenu {
-  margin-top: -6px; /* Adjust this number to get the exact distance you want */
+.season-archive-btn:hover img {
+  opacity: 1;
 }
 
 .hidden {
@@ -481,10 +509,61 @@ body tr:hover {
 }
 
 
+.season-panel {
+  position: absolute;
+  z-index: 1000;
+
+  top: 19%;      
+  right: 71.7%;
+  margin-top: 6px;
+
+
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  padding: 8px;
+  min-width: 260px;
+  
+
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+
+.season-header {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-light);
+}
+
+
+.season-item {
+  padding: 1px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  color: var(--text);
+}
+
+.season-item:hover {
+  background: var(--panel-3);
+}
+
+.season-item.current-season {
+  opacity: 0.6;
+  
+}
+
+
+
 </style>
 </head>
 <body>
-  <a href="index.html" class="back-link">← Back to leaderboard</a>
+  <a href="index.html" class="back-link" id="backToIndex">← Back to leaderboard</a>
 
 <section id="player-overview">
 
@@ -495,7 +574,23 @@ body tr:hover {
   <div class="overview-grid">
     <!-- LEFT COLUMN -->
     <div class="overview-info">
-      <div class="playeroverview-title">Player Overview:</div>
+      <div class="playeroverview-title-row">
+  <div class="playeroverview-title">Player Overview:</div>
+
+  <button
+    id="archive-season-toggle"
+    class="season-archive-btn"
+    aria-label="Select season"
+  >
+    <img src="icons/fc2.jpg" alt="">
+  </button>
+</div>
+
+<div
+  id="archive-season-panel"
+  class="season-panel"
+  hidden
+></div>
       <div id="playeroverview-summary">
         <span id="playeroverview-text">Loading stats...</span>
       </div>
@@ -504,10 +599,7 @@ body tr:hover {
       <button id="toggleExtraStats" class="extra-stats-btn">
         Show additional statistics
       </button>
-      <button id="toggleSeasonMenu" class="extra-stats-btn hidden">
-          Select season
-      </button>
-    <div id="season-menu" class="season-menu hidden"></div>
+      
     </div>
 
     <!-- MIDDLE -->

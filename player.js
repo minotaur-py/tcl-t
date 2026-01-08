@@ -17,25 +17,27 @@ async function loadPlayerPage() {
   // Helpers
   // --------------------------------------------------
 
-  async function getAvailablePastSeasons(playerId, currentSeason) {
-    const seasons = [];
+async function getOtherSeasonsWithPlayer(playerId, viewingSeason, maxSeason) {
+  const seasons = [];
 
-    for (let s = 0; s < currentSeason; s++) {
-      try {
-        const res = await fetchNoCache(`data/seasons/${s}/ratings.json`);
-        if (!res.ok) continue;
+  for (let s = 0; s <= maxSeason; s++) {
+    if (s === viewingSeason) continue;
 
-        const ratings = await res.json();
-        if (ratings && ratings[playerId]) {
-          seasons.push(s);
-        }
-      } catch {
-        // season folder or file missing → ignore
+    try {
+      const res = await fetchNoCache(`data/seasons/${s}/ratings.json`);
+      if (!res.ok) continue;
+
+      const ratings = await res.json();
+      if (ratings && ratings[playerId]) {
+        seasons.push(s);
       }
+    } catch {
+      // missing season → ignore
     }
-
-    return seasons;
   }
+
+  return seasons;
+}
 
   async function hasPlayerDataInSeason(playerId, season) {
   try {
@@ -49,36 +51,52 @@ async function loadPlayerPage() {
 }
 
 
+function buildSeasonPanel(panelEl, allSeasons) {
+  panelEl.innerHTML = "";
 
+  const header = document.createElement("div");
+  header.className = "season-header";
+  header.textContent = "Select season";
+  panelEl.appendChild(header);
 
+  // avail. seasons
+  
+  allSeasons.forEach(season => {
+    if (season === viewingSeason) return;
 
- function buildSeasonMenu(seasons, viewingSeason, currentSeason, playerId, showCurrent) {
-  const menu = document.getElementById("season-menu");
-  if (!menu) return;
+    const row = document.createElement("div");
+    row.className = "season-item";
+    
+    
+    if (season === currentSeason) {
+      row.classList.add("current-season");
+    }
 
-  menu.innerHTML = "";
+    
+    
+    row.innerHTML = `<span class="season-number">Season ${season}</span>`;
 
-  // --- Add current season when viewing historic AND data exists ---
-  if (showCurrent) {
-    const currentLink = document.createElement("a");
-    currentLink.href = `player.html?id=${playerId}`;
-    currentLink.textContent = "Current Season";
-    currentLink.className = "season-menu-item";
-    menu.appendChild(currentLink);
-  }
+    
+    row.addEventListener("click", () => {
+      panelEl.hidden = true;
+      
+      window.location.href =
+        season === currentSeason
+          ? `player.html?id=${playerId}`
+          : `player.html?id=${playerId}&season=${season}`;
+    });
 
-  // --- Add historic seasons ---
-  seasons.forEach(s => {
-    if (s === viewingSeason) return;
-
-    const a = document.createElement("a");
-    a.href = `player.html?id=${playerId}&season=${s}`;
-    a.textContent = `Season ${s}`;
-    a.className = "season-menu-item";
-
-    menu.appendChild(a);
+    panelEl.appendChild(row);
   });
 }
+
+
+
+
+
+
+
+ 
 
   // --------------------------------------------------
   // URL + season resolution
@@ -94,42 +112,46 @@ async function loadPlayerPage() {
   const seasonParam = urlParams.get("season");
   const viewingSeason =
     seasonParam !== null ? Number(seasonParam) : currentSeason;
-  window.viewingSeason = viewingSeason; /* need it for drawer stats */
- 
-  const pastSeasons = await getAvailablePastSeasons(
-    playerId,
-    currentSeason
-  );
+  window.viewingSeason = viewingSeason; 
 
-  const toggleBtn = document.getElementById("toggleSeasonMenu");
-  const seasonMenu = document.getElementById("season-menu");
+  const backLink = document.getElementById("backToIndex");
 
-  let showCurrentSeasonLink = false;
-if (viewingSeason !== currentSeason) {
-  showCurrentSeasonLink = await hasPlayerDataInSeason(playerId, currentSeason);
-}
-
-
-
-buildSeasonMenu(pastSeasons, viewingSeason, currentSeason, playerId, showCurrentSeasonLink);
-
-if (toggleBtn && seasonMenu) {
-  const hasItems = seasonMenu.children.length > 0;
-
-  if (hasItems) {
-    // 1. Remove the hidden class from the button so it can be seen
-    toggleBtn.classList.remove("hidden"); 
-
-    // 2. Set up the toggle for the menu
-    toggleBtn.addEventListener("click", () => {
-      seasonMenu.classList.toggle("hidden");
-    });
+if (backLink) {
+  if (viewingSeason !== currentSeason) {
+    backLink.href = `index.html?season=${viewingSeason}`;
   } else {
-    // 3. Ensure they stay hidden if there are no items
-    toggleBtn.classList.add("hidden");
-    seasonMenu.classList.add("hidden");
+    backLink.href = "index.html";
   }
 }
+ 
+ const otherSeasons = await getOtherSeasonsWithPlayer(
+  playerId,
+  viewingSeason,
+  currentSeason
+);
+
+const archiveBtn = document.getElementById("archive-season-toggle");
+const archivePanel = document.getElementById("archive-season-panel");
+
+if (archiveBtn) {
+  archiveBtn.style.display =
+    otherSeasons.length === 0 ? "none" : "inline-flex";
+}
+
+
+archiveBtn?.addEventListener("click", (e) => {
+  if (otherSeasons.length === 0) return;
+
+  e.stopPropagation();
+  buildSeasonPanel(archivePanel, otherSeasons);
+  archivePanel.hidden = !archivePanel.hidden;
+});
+
+document.addEventListener("click", () => {
+  archivePanel.hidden = true;
+});
+
+ 
 
 
   // --------------------------------------------------
@@ -155,8 +177,11 @@ if (toggleBtn && seasonMenu) {
     headerEl.textContent = playerName;
 
     if (viewingSeason !== currentSeason) {
-      headerEl.textContent += ` (Season ${viewingSeason})`;
-    }
+  const seasonTag = document.createElement("span");
+  seasonTag.className = "season-indicator";
+  seasonTag.textContent = `Season ${viewingSeason}`;
+  headerEl.appendChild(seasonTag);
+}
   }
 
 
@@ -259,7 +284,7 @@ const points = Math.round(playerStats.points);
     </div>
   `;
 
-  // Inject HTML into the page
+  
   const overviewEl = document.getElementById("playeroverview-text");
   if (overviewEl) {
     overviewEl.innerHTML = statsHTML;
@@ -576,7 +601,7 @@ const points = Math.round(playerStats.points);
                         <span style="
                           overflow: hidden;
                           text-overflow: ellipsis;
-                          max-width: 265px;
+                          max-width: 285px;
                           display: inline-block;
                           padding-right: 12px;
                         ">${p.name} (${info.name})</span>
@@ -595,7 +620,7 @@ const points = Math.round(playerStats.points);
 <!-- RATING COLUMN -->
 <span style="
   text-align: right;
-  min-width: 90px;
+  min-width: 95px;
 ">
   ${ratingAfter}
   <span style="color:white;">(</span><span style="color:${changeColor};">${change}</span><span style="color:white;">)</span>

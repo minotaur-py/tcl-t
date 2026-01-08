@@ -1,7 +1,7 @@
 let viewingSeason = null; // number
 let isHistoricView = false; // boolean
 let currentSeason = null;
-let seasonQuery = "";
+
 let tbody = null;
 let seasonMeta = null;
 
@@ -54,6 +54,24 @@ async function getCurrentSeason() {
 
   return result;
 }
+
+function getSeasonFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("season")) return null;
+
+  const n = Number(params.get("season"));
+  return Number.isInteger(n) ? n : null;
+}
+
+function withSeason(url, season) {
+  if (season === null || season === undefined) return url;
+  if (season === currentSeason) return url;
+
+  const u = new URL(url, window.location.origin);
+  u.searchParams.set("season", season);
+  return u.pathname + "?" + u.searchParams.toString();
+}
+
 
 function rankPlayers(players, names) {
   // sort with tie-breaking rules
@@ -296,13 +314,13 @@ const rankedPlayers = rankPlayers(
     row.innerHTML = `
       <td></td>
       <td>
-        ${maybeLink(p.rank, `player.html?id=${p.id}${seasonQuery}`)}
+        ${maybeLink(p.rank, withSeason(`player.html?id=${p.id}`, viewingSeason))}
       </td>
       <td class="player-cell">
         ${maybeLink(
           `<span class="player-name">${playerName}</span><br>
            <span class="race-subtext">${race}</span>`,
-          `player.html?id=${p.id}${seasonQuery}`
+          withSeason(`player.html?id=${p.id}`, viewingSeason)
         )}
       </td>
       <td>
@@ -311,17 +329,17 @@ const rankedPlayers = rankPlayers(
              <img src="${ratingToIcon(p.rating)}" alt="" class="rating-icon">
              <span>${p.rating}</span>
            </span>`,
-          `player.html?id=${p.id}${seasonQuery}`
+          withSeason(`player.html?id=${p.id}`, viewingSeason)
         )}
       </td>
       <td>
-        ${maybeLink(`${p.mu.toFixed(0)}`, `player.html?id=${p.id}${seasonQuery}`)}
+        ${maybeLink(`${p.mu.toFixed(0)}`, withSeason(`player.html?id=${p.id}`, viewingSeason))}
       </td>
       <td>
-        ${maybeLink(`${p.wins}-${p.losses}`, `player.html?id=${p.id}${seasonQuery}`)}
+        ${maybeLink(`${p.wins}-${p.losses}`, withSeason(`player.html?id=${p.id}`, viewingSeason))}
       </td>
       <td>
-        ${maybeLink(`${timeAgo(p.ts)}`, `player.html?id=${p.id}${seasonQuery}`)}
+        ${maybeLink(`${timeAgo(p.ts)}`, withSeason(`player.html?id=${p.id}`, viewingSeason))}
       </td>
       <td></td>
     `;
@@ -376,10 +394,21 @@ async function loadSeason(seasonNumber, seasonLabelEl) {
 
 if (currentSeason === null) return;
 
+  
   viewingSeason = seasonNumber;
-  isHistoricView = seasonNumber !== currentSeason;
-  document.body.classList.toggle("historic-view", isHistoricView);
-  seasonQuery = isHistoricView ? `&season=${viewingSeason}` : "";
+
+isHistoricView = viewingSeason !== currentSeason;
+document.body.classList.toggle("historic-view", isHistoricView);
+
+
+
+history.replaceState(
+  { season: viewingSeason },
+  "",
+  isHistoricView
+    ? withSeason("index.html", viewingSeason)
+    : "index.html"
+);
 
   const start = seasonMeta.seasons[seasonNumber];
   const end = seasonMeta.seasons[seasonNumber + 1] ?? null;
@@ -454,17 +483,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     allSeasons.sort((a, b) => b - a);
   }
+  
+  const seasonFromURL = getSeasonFromURL();
 
-  viewingSeason = currentSeason;
-  isHistoricView = false;
+viewingSeason =
+  seasonFromURL !== null &&
+  seasonFromURL !== currentSeason &&
+  seasonFromURL in seasonMeta.seasons
+    ? seasonFromURL
+    : currentSeason;
+
+isHistoricView = viewingSeason !== currentSeason;
+document.body.classList.toggle("historic-view", isHistoricView);
+
+
 
   const seasonLabelEl = document.getElementById("season-label");
   attachSeasonExtraHandler(seasonLabelEl);
-  const seasonPanelEl = document.getElementById("season-panel");
-  const seasonCoreEl = seasonLabelEl?.querySelector(".season-core");
+  
+  
 
 
-function buildSeasonPanel(panelEl, seasonLabelEl) {
+function buildSeasonPanel(panelEl) {
   panelEl.innerHTML = "";
 
   const header = document.createElement("div");
@@ -508,10 +548,9 @@ const archivePanel = document.getElementById("archive-season-panel");
 archiveBtn?.addEventListener("click", (e) => {
   e.stopPropagation();
 
-  // close main panel if open
-  seasonPanelEl.hidden = true;
+  
 
-  buildSeasonPanel(archivePanel, seasonLabelEl);
+  buildSeasonPanel(archivePanel);
   archivePanel.hidden = !archivePanel.hidden;
 });
 
@@ -519,37 +558,19 @@ document.addEventListener("click", () => {
   archivePanel.hidden = true;
 });
 
-  function rebuildSeasonPanel() {
-  buildSeasonPanel(seasonPanelEl, seasonLabelEl);
-}
 
 
 
-  rebuildSeasonPanel();
 
-  function toggleSeasonPanel(force) {
-    const show = force ?? seasonPanelEl.hidden;
-    seasonPanelEl.hidden = !show;
-  }
+  
 
-  seasonCoreEl?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    rebuildSeasonPanel();
-    toggleSeasonPanel();
-  });
+  
 
-  document.addEventListener("click", () => {
-    if (seasonPanelEl) seasonPanelEl.hidden = true;
-  });
 
-  seasonCoreEl?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-      rebuildSeasonPanel();
-      toggleSeasonPanel();
-    }
-  });
+
+
+
+
 
   // ------------------------
   // CLEAN UP THIS SHIT
