@@ -10,7 +10,7 @@ let seasonCountdownShowing = false;
 let seasonCountdownOriginalText = "";
 let seasonCountdownEndTime = null;
 
-
+const BASE_PATH = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
 
 
 function fetchNoCache(url) {
@@ -425,8 +425,8 @@ history.replaceState(
 
 
   const [ratings, names] = await Promise.all([
-    fetchNoCache(`data/seasons/${seasonNumber}/ratings.json`).then(r => r.json()),
-    fetchNoCache(`data/seasons/${seasonNumber}/names.json`).then(r => r.json())
+    fetchNoCache(`${BASE_PATH}data/seasons/${seasonNumber}/ratings.json`).then(r => r.json()),
+    fetchNoCache(`${BASE_PATH}data/seasons/${seasonNumber}/names.json`).then(r => r.json())
   ]);
 
   renderLeaderboard(ratings, names);
