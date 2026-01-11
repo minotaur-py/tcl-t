@@ -526,14 +526,14 @@ function buildSeasonPanel(panelEl) {
     if (season === currentSeason) row.classList.add("current-season");
 
     row.innerHTML = `
-  <span class="season-number">Season ${season}</span>
+      <span class="season-number">Season ${season}</span>
 
-  <span class="season-dates-grid">
-    <span class="season-date from">${formatDate(start)}</span>
-    <span class="season-date dash">–</span>
-    <span class="season-date to">${end ? formatDate(end) : ""}</span>
-  </span>
-`;
+      <span class="season-dates-grid">
+        <span class="season-date from">${formatFullDate(start)}</span>
+        <span class="season-date dash">–</span>
+        <span class="season-date to">${end ? formatFullDate(end) : ""}</span>
+      </span>
+    `;
 
     row.addEventListener("click", async (e) => {
       e.stopPropagation();

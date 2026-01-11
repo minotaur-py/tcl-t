@@ -380,30 +380,22 @@ html {
 }
 
 
-/* .season-panel--archive {
-  background: #1c1c1c;
-  border-color: #444;
-  color: #bbb;
-  top: calc(39% + 6px);
-  left: 30%;
-  transform: none;
-
-} */
 
 
 
 .season-panel--archive {
   position: absolute;
   top: calc(22.1% + 6px);
-  right: 21.8%;
+  right: 22.1%;
   left: auto;
 
-  background: #1E1E1E; /*1E1E1E  */
+  background: #252525; 
   color: #c2c2c2;
 
   padding: 10px 0;
-  min-width: 290px;
-  border: 1px solid #2A2A2A;
+  min-width: 140px;
+  
+  border: 1px solid #313131;
   /*border: 1px solid #444;*/
   border-radius: 10px;
 
@@ -411,33 +403,32 @@ html {
   z-index: 9999;
 }
 
-/* Header */
 .season-panel--archive .season-header {
   text-transform: none;
   letter-spacing: normal;
   font-size: 1.05rem;
-  font-weight: 400;
+  font-weight: 500;
   color: #FFFFFF;
   padding: 6px 12px 16px;
   /*border-bottom: 1px solid #2f2f2f; */
   pointer-events: none;
 }
 
-/* Each season row */
 .season-panel--archive .season-item {
   display: grid;
-  grid-template-columns: auto max-content; 
+  grid-template-columns: auto auto;
   align-items: center;
-  column-gap: 16px;
+  column-gap: 54px;
 
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
   color: #d6d6d6;
-  padding: 6px 14px;
+  padding: 6px 19px 6px 24px;   /* top bot                  left right   6px 19px 6px 14px */
 
   text-transform: none;
   cursor: pointer;
   text-align: left; 
+  
 
   transition:
     background-color 0.08s ease,
@@ -447,6 +438,7 @@ html {
 .season-panel--archive .season-item:hover {
   background: #2f2f2f;
   color: #e0e0e0;
+  
 }
 
 .season-panel--archive .current-season {
@@ -455,14 +447,16 @@ html {
 
 .season-panel--archive .season-dates-grid {
   display: grid;
-  grid-template-columns: 5ch 7ch 5ch; 
+  grid-template-columns: 11ch 4ch 10ch; 
   align-items: center;
   font-variant-numeric: tabular-nums;
   padding: 0 8px 0 0;
+  
 }
 
 .season-panel--archive .season-date {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
+  font-weight: 100;
   color: #8a8a8a;
   line-height: 1.2;
   white-space: nowrap;

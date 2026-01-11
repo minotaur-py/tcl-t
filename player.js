@@ -819,9 +819,9 @@ if (window.location.pathname.includes("player.html")) {
     extraChart1Label.textContent = text;
   }
 
-  // ----------------------------------------------------
+
   // Expandable section toggle
-  // ----------------------------------------------------
+ 
   toggleBtn.addEventListener("click", () => {
     const opened = extraStats.classList.toggle("open");
     toggleBtn.textContent = opened
@@ -831,11 +831,12 @@ if (window.location.pathname.includes("player.html")) {
 if (opened && !chartLoaded) {
   const playerId = new URLSearchParams(window.location.search).get("id");
   if (playerId) {
-    initChart(playerId);      // PWR
-    loadMatchupChart(playerId);   // PWM
-    loadDrawer3Chart(playerId);   // 
+    initChart(playerId);      
+    loadMatchupChart(playerId);   
+    loadDrawer3Chart(playerId);   
     loadDrawer4Chart(playerId);
-    
+    loadDrawer5Chart(playerId);
+    loadDrawer6MapsChart(playerId);
     chartLoaded = true;
   }
 }
@@ -846,11 +847,8 @@ if (opened && !chartLoaded) {
 
 
 
-
-
-  // ----------------------------------------------------
   // Chart 1
-  // ----------------------------------------------------
+ 
   async function initChart(playerId) {
     cachedData = await loadPlayerData(playerId);
     if (!cachedData) return;
@@ -866,15 +864,15 @@ if (opened && !chartLoaded) {
     // Show button
     chartToggleBtn.style.display = "inline-block";
 
-    // Toggle handler
+    
     chartToggleBtn.addEventListener("click", switchChart);
 
   
   }
 
-  // ----------------------------------------------------
+
   // Fetch season data once
-  // ----------------------------------------------------
+
 async function loadPlayerData(playerId) {
   
 
@@ -942,9 +940,9 @@ const CHART_MODES = [
 ];
 
 
-  // ----------------------------------------------------
+  
   // Switch chart type
-  // ----------------------------------------------------
+  
 function switchChart() {
   const current = chartToggleBtn.dataset.mode;
   const nextIndex = (CHART_MODES.indexOf(current) + 1) % CHART_MODES.length;
@@ -976,9 +974,7 @@ function switchChart() {
 }
 
 
-  // ----------------------------------------------------
-  // Destroy previous chart safely
-  // ----------------------------------------------------
+ 
   function resetChart() {
     if (chartInstance) {
       chartInstance.destroy();
@@ -1051,9 +1047,9 @@ function drawGamesChart(data) {
 
 
 
-  // ----------------------------------------------------
+  
   // Chart B: Total Points gained
-  // ----------------------------------------------------
+  
 function drawTotalChart(data) {
   resetChart();
 
@@ -1179,12 +1175,12 @@ function formatValue(value, mode) {
 
 
 
-  // ----------------------------------------------------
+  
   // Shared chart styling
-  // ----------------------------------------------------
+  
   function chartOptions(mode, playerStats, barThickness = 56) {
 
-  // Create tooltip element once
+  
   let tooltipEl = document.getElementById("bar-tooltip");
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
@@ -1295,9 +1291,9 @@ let prefixText;
     </div>
   `;
 
-  // -----------------------------------------------------------
-  // Accurate mouse positioning
-  // -----------------------------------------------------------
+  
+  // Mouse positioning
+  
   const rect = ctx.chart.canvas.getBoundingClientRect();
   const mouse = ctx.chart.tooltip?._eventPosition;
 
@@ -1460,9 +1456,7 @@ toggleEl.onclick = switchMatchupChart;
 
 }
 
-// ======================================================================
-// Parse pwm → usable list
-// ======================================================================
+
 function parseMatchupData(obj) {
   // helper: decide which teammate gets parentheses based on key[0]
   function decideParenthesis(playerRace, t1, t2) {
@@ -1534,9 +1528,7 @@ return {
   return entries;
 }
 
-// ======================================================================
-// Chart rendering
-// ======================================================================
+
 function resetMatchupChart() {
   if (matchupChartInstance) {
     matchupChartInstance.destroy();
@@ -1626,8 +1618,8 @@ function drawMatchupChartTotal(list) {
       datasets: [{
         data: list.map(x => x.total),
         backgroundColor: list.map(x => matchupColor(x.key)),
-        barThickness: thickness,       // ← dynamic thickness
-        maxBarThickness: 44            // ← safety cap (optional)
+        barThickness: thickness,       
+        maxBarThickness: 44            
       }]
     },
     options: matchupChartOptions("total", list, thickness)
@@ -1637,7 +1629,7 @@ function drawMatchupChartTotal(list) {
 function drawMatchupChartPerGame(list) {
   resetMatchupChart();
 
-  // independent per-game order
+  
   const sorted = [...list].sort((a, b) => b.perGame - a.perGame);
 
   const ctx = document.getElementById("extraChart2").getContext("2d");
@@ -1658,9 +1650,7 @@ function drawMatchupChartPerGame(list) {
   });
 }
 
-// ======================================================================
-// Colors
-// ======================================================================
+
 function matchupColor(key) {
   const race = key[0];
   return {
@@ -1671,7 +1661,7 @@ function matchupColor(key) {
 }
 
 
-function calcBarThickness(listLength) {               /* brukes av chart2 per nå  */
+function calcBarThickness(listLength) {               
   const max = 42;
   const quota = 132;
   if (listLength <= 0) return max;
@@ -1679,8 +1669,8 @@ function calcBarThickness(listLength) {               /* brukes av chart2 per n�
 }
 
 function calcBarThicknessHigh(listLength) {
-  const max = 44;
-  const quota = 192;                   /* GJELDER4 */
+  const max = 440;
+  const quota = 192;                   
   if (listLength <= 0) return max;
   return Math.min(max, Math.floor(quota / listLength));
 }
@@ -1688,7 +1678,7 @@ function calcBarThicknessHigh(listLength) {
 
 function calcBarThickness44(listLength) {
   const max = 44;
-  const quota = 192;                   /* GJELDER4 */
+  const quota = 192;                   
   if (listLength <= 0) return max;
   return Math.min(max, Math.floor(quota / listLength));
 }
@@ -1696,7 +1686,7 @@ function calcBarThickness44(listLength) {
 
 function calcBarThicknessHigh3(listLength) {
   const max = 44;
-  const quota = 250;                   /* GJELDER 3  */
+  const quota = 250;                   
   if (listLength <= 0) return max;
   
   return Math.min(max, Math.floor(quota / listLength));
@@ -1704,9 +1694,7 @@ function calcBarThicknessHigh3(listLength) {
 
 
 
-// ======================================================================
-// Tooltip + chart options
-// ======================================================================
+
 function matchupChartOptions(mode, list, barThickness = 44) {
   let tooltipEl = document.getElementById("bar-tooltip-matchups");
   if (!tooltipEl) {
@@ -1735,9 +1723,7 @@ function matchupChartOptions(mode, list, barThickness = 44) {
 
     datasets: {
       bar: {
-        
         barThickness,
-        
         maxBarThickness: 44
       }
     },
@@ -1745,107 +1731,100 @@ function matchupChartOptions(mode, list, barThickness = 44) {
     plugins: {
       legend: { display: false },
       tooltip: {
-  enabled: false,
-  external: ctx => {
-    const tooltip = ctx.tooltip;
-    if (!tooltip || !tooltip.opacity) {
-      tooltipEl.style.opacity = 0;
-      return;
-    }
+        enabled: false,
+        external: ctx => {
+          const tooltip = ctx.tooltip;
+          if (!tooltip || !tooltip.opacity) {
+            tooltipEl.style.opacity = 0;
+            return;
+          }
 
-    const dp = tooltip.dataPoints?.[0];
-    if (!dp) return;
+          const dp = tooltip.dataPoints?.[0];
+          if (!dp) return;
 
-    const entry = list[dp.dataIndex];
-    const { label, wins, losses, games, total, perGame } = entry;
+          const entry = list[dp.dataIndex];
+          const { label, wins, losses, games, total, perGame } = entry;
+          const wr = games > 0 ? (wins / games) * 100 : 0;
 
-    const wr = games > 0 ? (wins / games) * 100 : 0;
+          const plural = (n, w) =>
+            w === "loss" ? (n === 1 ? "loss" : "losses") : (n === 1 ? w : w + "s");
 
-    const plural = (n, w) =>
-    w === "loss" ? (n === 1 ? "loss" : "losses") : (n === 1 ? w : w + "s");
+          let prefixText = "";
+          if (mode === "games") {
+            prefixText = `${games} ${plural(games, "game")}, ${wins} ${plural(wins, "win")}, ${losses} ${plural(losses, "loss")}, ${wr.toFixed(1)}%. `;
+          } else {
+            prefixText = `${wins} ${plural(wins, "win")}, ${losses} ${plural(losses, "loss")}, ${wr.toFixed(1)}%. `;
+          }
 
-    let prefixText = "";
-  if (mode === "games") {
-    prefixText = `${games} ${plural(games, "game")}, ${wins} ${plural(wins, "win")}, ${losses} ${plural(losses, "loss")}, ${wr.toFixed(1)}%. `;
-  } else {
-    prefixText = `${wins} ${plural(wins, "win")}, ${losses} ${plural(losses, "loss")}, ${wr.toFixed(1)}%. `;
-  }
+          let valueText = "";
+          if (mode === "pergame") {
+            if (perGame < 0) {
+              valueText = `${formatValue(Math.abs(perGame), mode)} points lost per game.`;
+            } else {
+              valueText = `${formatValue(perGame, mode)} points gained per game.`;
+            }
+          } else {
+            if (total < 0) {
+              valueText = `${Math.abs(total)} points lost.`;
+            } else {
+              valueText = `${total} points gained.`;
+            }
+          }
 
-    
+          const raceA = entry.teammateA.toLowerCase();
+          const raceB = entry.teammateB.toLowerCase();
+          const colors = { p: "#EBD678", t: "#53B3FC", z: "#C1A3F5" };
+          const c1 = colors[raceA] || "#999";
+          const c2 = colors[raceB] || "#999";
 
-   
-    let valueText = "";
+          tooltipEl.innerHTML = `
+            <div style="display:flex;align-items:center;gap:3px;font-weight:bold;margin-bottom:3px;">
+              <span style="width:10px;height:10px;background:${c1};display:inline-block;border-radius:2px;"></span>
+              <span style="width:10px;height:10px;background:${c2};display:inline-block;border-radius:2px;"></span>
+              <span>${label}</span>
+            </div>
+            <div style="font-family:monospace; opacity:0.85;">
+              ${prefixText}${valueText}
+            </div>
+          `;
 
-if (mode === "pergame") {
-  if (perGame < 0) {
-    valueText = `${formatValue(Math.abs(perGame), mode)} points lost per game.`;
-  } else {
-    valueText = `${formatValue(perGame, mode)} points gained per game.`;
-  }
-} else {
-  if (total < 0) {
-    valueText = `${Math.abs(total)} points lost.`;
-  } else {
-    valueText = `${total} points gained.`;
-  }
-}
+          const rect = ctx.chart.canvas.getBoundingClientRect();
+          const mouse = ctx.chart.tooltip?._eventPosition;
+          let x = mouse ? mouse.x : tooltip.caretX;
+          let y = mouse ? mouse.y : tooltip.caretY;
 
-    // Teammate colors
-    const raceA = entry.teammateA.toLowerCase();
-    const raceB = entry.teammateB.toLowerCase();
-    const colors = { p: "#EBD678", t: "#53B3FC", z: "#C1A3F5" };
-    const c1 = colors[raceA] || "#999";
-    const c2 = colors[raceB] || "#999";
+          let tooltipX = rect.left + window.pageXOffset + x + 14;
+          let tooltipY = rect.top + window.pageYOffset + y - 12;
 
-    tooltipEl.innerHTML = `
-      <div style="display:flex;align-items:center;gap:3px;font-weight:bold;margin-bottom:3px;">
-        <span style="width:10px;height:10px;background:${c1};display:inline-block;border-radius:2px;"></span>
-        <span style="width:10px;height:10px;background:${c2};display:inline-block;border-radius:2px;"></span>
-        <span>${label}</span>
-      </div>
+          const ttWidth = tooltipEl.offsetWidth;
+          const ttHeight = tooltipEl.offsetHeight;
+          const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+          const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
 
-      <div style="font-family:monospace; opacity:0.85;">
-        ${prefixText}${valueText}
-      </div>
-    `;
+          if (tooltipX + ttWidth > viewportWidth - 6) tooltipX = viewportWidth - ttWidth - 6;
+          if (tooltipX < 0) tooltipX = 0;
+          if (tooltipY + ttHeight > viewportHeight - 8) tooltipY = viewportHeight - ttHeight - 8;
+          if (tooltipY < 0) tooltipY = 0;
 
-    // Tooltip positioning
-    const rect = ctx.chart.canvas.getBoundingClientRect();
-    const mouse = ctx.chart.tooltip?._eventPosition;
-    let x = mouse ? mouse.x : tooltip.caretX;
-    let y = mouse ? mouse.y : tooltip.caretY;
-
-    let tooltipX = rect.left + window.pageXOffset + x + 14;
-    let tooltipY = rect.top + window.pageYOffset + y - 12;
-
-    const ttWidth = tooltipEl.offsetWidth;
-    const ttHeight = tooltipEl.offsetHeight;
-    const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
-    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-
-    if (tooltipX + ttWidth > viewportWidth - 6) tooltipX = viewportWidth - ttWidth - 6;
-    if (tooltipX < 0) tooltipX = 0;
-    if (tooltipY + ttHeight > viewportHeight - 8) tooltipY = viewportHeight - ttHeight - 8;
-    if (tooltipY < 0) tooltipY = 0;
-
-    tooltipEl.style.left = tooltipX + "px";
-    tooltipEl.style.top  = tooltipY + "px";
-    tooltipEl.style.opacity = 1;
-  }
-}
+          tooltipEl.style.left = tooltipX + "px";
+          tooltipEl.style.top  = tooltipY + "px";
+          tooltipEl.style.opacity = 1;
+        }
+      }
     },
 
     scales: {
       x: {
         beginAtZero: true,
-         min: mode === "winrate" ? 0 : undefined,
+        min: mode === "winrate" ? 0 : undefined,
         max: mode === "winrate" ? 100 : undefined,
         grid: { color: "#222" },
-        ticks: { color: "#AAA",
-        callback: function(value) {
+        ticks: { 
+          color: "#AAA",
+          callback: function(value) {
             return mode === "winrate" ? value + "%" : value;
           }        
- }
+        }
       },
       y: {
         ticks: { color: "#AAA" }
@@ -1853,6 +1832,65 @@ if (mode === "pergame") {
     }
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* variable grid helpers */
+
+let drawer3BarCount = null;
+let drawer4BarCount = null;
+
+function maybeArrangeBottomCharts() {
+  if (drawer3BarCount !== null && drawer4BarCount !== null) {
+    arrangeBottomCharts({
+      drawer3Count: drawer3BarCount,
+      drawer4Count: drawer4BarCount
+    });
+  }
+}
+
+function arrangeBottomCharts({ drawer3Count, drawer4Count }) {
+  const left = document.getElementById("bottomStackLeft");
+  const right = document.getElementById("bottomStackRight");
+
+  const c3 = document.getElementById("extraChart3Container");
+  const c4 = document.getElementById("extraChart4Container");
+  const c5 = document.getElementById("extraChart5Container");
+  const c6 = document.getElementById("extraChart6Container");
+
+  if (!left || !right || !c3 || !c4 || !c5 || !c6) return;
+
+  // clear stacks
+  left.replaceChildren();
+  right.replaceChildren();
+
+  if (drawer3Count > drawer4Count) {
+    // LEFT: 3 + 6  |  RIGHT: 4 + 5
+    left.append(c3, c6);
+    right.append(c4, c5);
+  } else {
+    // LEFT: 3 + 5  |  RIGHT: 4 + 6 (original)
+    left.append(c3, c5);
+    right.append(c4, c6);
+  }
+}
+
+
+
+
+
 
 
 
@@ -1907,9 +1945,7 @@ function updateDrawer3ChartIndicator(mode) {
 
 
 
-// ======================================================================
-// Drawer 3
-// ======================================================================
+
 async function loadDrawer3Chart(playerId) {
   
 
@@ -1925,11 +1961,14 @@ const season = window.viewingSeason;
   const raw = data.drawer3?.[playerId];
   if (!raw) return;
 
-  // parse
   drawer3DataCache = parseDrawer3Data(raw);
 
-  // dynamic chart height
-  updateExtraChart3Height(drawer3DataCache.length);
+// height proxy
+drawer3BarCount = drawer3DataCache.length;
+maybeArrangeBottomCharts();
+
+// dynamic chart height
+updateExtraChart3Height(drawer3BarCount);
 
 
 
@@ -1989,9 +2028,9 @@ toggleEl.onclick = () => {
 
 
 
-// ======================================================================
+
 // Compute + apply dynamic height for Extra Chart 3
-// ======================================================================
+
 function updateExtraChart3Height(barCount) {
   // base height: how tall chart should be for up to ~10 bars
   const base = 340;  
@@ -2011,9 +2050,7 @@ function updateExtraChart3Height(barCount) {
 }
 
 
-// ======================================================================
-// Parse drawer3 → list usable by charts
-// ======================================================================
+
 function parseDrawer3Data(obj) {
   // same parenthesis-decider logic but adapted for 5-letter key
   function decideParenthesis(playerRace, t1, t2) {
@@ -2077,9 +2114,7 @@ function parseDrawer3Data(obj) {
   }).sort((a, b) => b.total - a.total);
 }
 
-// ======================================================================
-// Reset
-// ======================================================================
+
 function resetDrawer3Chart() {
   if (drawer3ChartInstance) {
     drawer3ChartInstance.destroy();
@@ -2087,9 +2122,7 @@ function resetDrawer3Chart() {
   }
 }
 
-// ======================================================================
-// Draw total
-// ======================================================================
+
 function drawDrawer3Total(list) {
   resetDrawer3Chart();
 
@@ -2111,13 +2144,11 @@ function drawDrawer3Total(list) {
   });
 }
 
-// ======================================================================
-// Draw per game
-// ======================================================================
+
 function drawDrawer3PerGame(list) {
   resetDrawer3Chart();
 
-  // independent sorting
+  
   const sorted = [...list].sort((a, b) => b.perGame - a.perGame);
 
   const ctx = document.getElementById("extraChart3").getContext("2d");
@@ -2162,6 +2193,8 @@ function drawDrawer3Games(list) {
 }
 
 
+
+
 function drawDrawer3Winrate(list) {
   resetDrawer3Chart();
 
@@ -2190,9 +2223,7 @@ function drawDrawer3Winrate(list) {
 
 
 
-// ======================================================================
-// Tooltip
-// ======================================================================
+
 function drawer3ChartOptions(mode, list, barThickness) {
   let tooltipEl = document.getElementById("bar-tooltip-drawer3");
   if (!tooltipEl) {
@@ -2310,23 +2341,39 @@ if (mode === "winrate") {
           const oppLabel = `${oA}${oB}`;
 
 tooltipEl.innerHTML = `
-  <div style="display:flex;align-items:center;gap:12px;font-weight:700;margin-bottom:4px;color:inherit;">
+  <div style="
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:bold;
+    margin-bottom:4px;
+    letter-spacing:0;
+    font-family:inherit;
+  ">
     <div style="display:flex;align-items:center;gap:3px;">
       <span style="width:10px;height:10px;background:${colors[tA.toLowerCase()] || '#666'};display:inline-block;border-radius:2px;"></span>
       <span style="width:10px;height:10px;background:${colors[tB.toLowerCase()] || '#666'};display:inline-block;border-radius:2px;"></span>
-      <span style="font-family:monospace;font-size:14px;letter-spacing:0;color:inherit;">${teamLabel}</span>
+      <span>${teamLabel}</span>
     </div>
-    <div style="opacity:1;color:inherit;font-weight:700;font-size:14px;">vs</div>
+
+    <span style="opacity:0.9;">vs</span>
+
     <div style="display:flex;align-items:center;gap:3px;">
       <span style="width:10px;height:10px;background:${colors[oA.toLowerCase()] || '#666'};display:inline-block;border-radius:2px;"></span>
       <span style="width:10px;height:10px;background:${colors[oB.toLowerCase()] || '#666'};display:inline-block;border-radius:2px;"></span>
-      <span style="font-family:monospace;font-size:14px;letter-spacing:0;color:inherit;">${oppLabel}</span>
+      <span>${oppLabel}</span>
     </div>
   </div>
 
-<div style="font-family:monospace; font-size:13px; opacity:0.85; line-height:1.2;">
-  ${prefixText}${valueText}
-</div>
+  <div style="
+    font-family:monospace;
+    font-size:13px;
+    opacity:0.85;
+    line-height:1.2;
+    letter-spacing:0;
+  ">
+    ${prefixText}${valueText}
+  </div>
 `;
 
           const rect = ctx.chart.canvas.getBoundingClientRect();
@@ -2472,8 +2519,15 @@ const season = window.viewingSeason;
   const raw = stats?.drawer4?.[playerId];
   if (!raw) return;
 
-  drawer4DataCache = parseDrawer4Data(raw, names);
-  updateExtraChart4Height(drawer4DataCache.length);
+ drawer4DataCache = parseDrawer4Data(raw, names);
+
+
+
+// record height proxy
+drawer4BarCount = drawer4DataCache.length;
+maybeArrangeBottomCharts();
+
+updateExtraChart4Height(drawer4BarCount);
 
   drawDrawer4Total(drawer4DataCache);
 
@@ -2484,7 +2538,7 @@ const season = window.viewingSeason;
 
   labelEl.textContent = "Number of Games Played with Each Ally";
 toggleEl.dataset.mode = "games";
-toggleEl.textContent = "Show Win Rates";
+toggleEl.textContent = "Show Win Rate";
 toggleEl.style.display = "inline-block";
 
 updateDrawer4ChartIndicator("games");
@@ -2504,11 +2558,11 @@ toggleEl.onclick = () => {
   if (next === "games") {
     drawDrawer4Games(drawer4DataCache);
     labelEl.textContent = "Number of Games Played with Each Ally";
-    toggleEl.textContent = "Show Win Rates";
+    toggleEl.textContent = "Show Win Rate";
 
   } else if (next === "winrate") {
     drawDrawer4WinRate(drawer4DataCache);
-    labelEl.textContent = "Win Rates with Regular Allies";
+    labelEl.textContent = "Win Rate with Regular Allies";
     toggleEl.textContent = "Show Total Points Gained";
 
   } else if (next === "total") {
@@ -2528,7 +2582,6 @@ toggleEl.onclick = () => {
 
 
 
-// Parse raw drawer4 data
 function parseDrawer4Data(obj, names) {
   return Object.entries(obj || {})
     .map(([allyId, arr]) => {
@@ -2550,7 +2603,7 @@ function parseDrawer4Data(obj, names) {
     .sort((a, b) => b.total - a.total);
 }
 
-// Reset old chart
+
 function resetDrawer4Chart() {
   if (drawer4ChartInstance) {
     try { drawer4ChartInstance.destroy(); } catch {}
@@ -2558,7 +2611,7 @@ function resetDrawer4Chart() {
   }
 }
 
-// Color Helpers
+
 function mmrColor(v) {
   if (v >= 0) {
     const t = Math.min(v / 50, 1);
@@ -2597,7 +2650,19 @@ function makeMmrColorFunction(list, mode) {
   };
 }
 
-// Draw TOTAL MMR
+
+
+
+
+
+
+
+
+
+
+
+
+//TOTAL MMR
 function drawDrawer4Total(list) {
   resetDrawer4Chart();
 
@@ -2623,7 +2688,7 @@ function drawDrawer4Total(list) {
   });
 }
 
-// Draw MMR per game
+// MMR per game
 function drawDrawer4PerGame(list) {
   resetDrawer4Chart();
 
@@ -2685,10 +2750,35 @@ function drawDrawer4Games(list) {
 
 
 function winRateColor(wr) {
-  // wr is 0–1
+  
   const t = Math.max(0, Math.min((wr - 0.5) / 0.5, 1));
   return interpolateColor("#444444", "#32AA5E", t);
 }
+
+
+function calcBarThicknessAllyB(listLength) {
+  const max = 44;
+  const quota = 400;                   
+  if (listLength <= 0) return max;
+  return Math.min(max, Math.floor(quota / listLength));
+}
+
+/*           function drawDrawer4   o98wyehr*/
+
+/*
+
+
+
+sorted length: 6
+player.js?v=2:2797 originalCount: 10
+player.js?v=2:2798 currentCount: 6
+player.js?v=2:2800 Old Thickness: 32
+player.js?v=2:2801 New Thickness: 19
+
+
+
+
+*/
 
 
 function drawDrawer4WinRate(list) {
@@ -2701,11 +2791,27 @@ function drawDrawer4WinRate(list) {
 
   const sorted = filtered.sort((a, b) => b.winRate - a.winRate);
 
+  const originalCount = list.length; 
+  const currentCount = sorted.length;
+
   const canvas = document.getElementById("extraChart4");
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const thickness = calcBarThickness44(sorted.length);
+  
+
+  const thickness_old = calcBarThicknessHigh(sorted.length);
+  const thickness = calcBarThicknessHigh(Math.round(sorted.length * currentCount / originalCount));
+  const thicknessREAL = Math.min(44, Math.round((sorted.length * originalCount) / currentCount));             
+  const thicknessg = calcBarThicknessHigh(sorted.length);
+  
+  console.log("sorted length:", sorted.length);
+  console.log("originalCount:", originalCount);
+  console.log("currentCount:", currentCount);  
+
+console.log("Old Thickness:", thickness_old);
+console.log("New Thickness:", thickness);
+
 
   drawer4ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -2732,17 +2838,9 @@ function drawDrawer4WinRate(list) {
 
 
 
-
-
-
-
-
-
-
-
 function plural(n, singular, pluralForm) {
   if (!pluralForm) {
-    // common irregulars
+    
     if (singular === "loss") pluralForm = "losses";
     else pluralForm = singular + "s";
   }
@@ -2788,119 +2886,737 @@ function drawer4ChartOptions(mode, list, barThickness) {
       tooltip: {
         enabled: false,
         external: ctx => {
-  const tooltip = ctx.tooltip;
-  if (!tooltip || !tooltip.opacity) {
-    tooltipEl.style.opacity = 0;
-    return;
-  }
+          const tooltip = ctx.tooltip;
+          if (!tooltip || !tooltip.opacity) {
+            tooltipEl.style.opacity = 0;
+            return;
+          }
 
-  const dp = tooltip.dataPoints?.[0];
-  if (!dp) return;
+          const dp = tooltip.dataPoints?.[0];
+          if (!dp) return;
 
-  const entry = list[dp.dataIndex];
-  const { allyName, wins, losses, games, total, perGame } = entry;
-  const wr = games > 0 ? (wins / games) * 100 : 0;
-const wrText = `${wr.toFixed(1)}%`;
+          const entry = list[dp.dataIndex];
 
-let bodyHtml;
+          
+          const title = dp.label ?? "Unknown";
 
+          const { wins, losses, games, total, perGame } = entry;
+          const wr = games > 0 ? (wins / games) * 100 : 0;
+          const wrText = `${wr.toFixed(1)}%`;
 
+          let bodyHtml;
 
+          if (mode === "winrate") {
+            bodyHtml = `
+              ${plural(games, "game")},
+              ${plural(wins, "win")}, ${plural(losses, "loss")}.
+              ${wrText} win rate.
+            `;
+          } else if (mode === "games") {
+            bodyHtml = `
+              ${plural(games, "game")}, 
+              ${plural(wins, "win")}, ${plural(losses, "loss")}, ${wrText}. 
+              ${formatValue(Math.abs(total), "total")} points ${total >= 0 ? "gained." : "lost."}
+            `;
+          } else {
+            const value = mode === "total" ? total : perGame;
+            const absVal = formatValue(Math.abs(value), mode);
 
+            bodyHtml = `
+              ${plural(wins, "win")}, ${plural(losses, "loss")}, ${wrText}. 
+              ${absVal} ${
+                value < 0
+                  ? (mode === "total" ? "points lost." : "points lost per game.")
+                  : (mode === "total" ? "points gained." : "points gained per game.")
+              }
+            `;
+          }
 
+          tooltipEl.innerHTML = `
+            <div style="font-weight:bold;margin-bottom:3px;">
+              ${title}
+            </div>
+            <div style="font-family:monospace; opacity:0.85;">
+              ${bodyHtml}
+            </div>
+          `;
 
+          const rect = ctx.chart.canvas.getBoundingClientRect();
+          const mouse = ctx.chart.tooltip?._eventPosition;
+          const x = mouse ? mouse.x : tooltip.caretX;
+          const y = mouse ? mouse.y : tooltip.caretY;
 
-if (mode === "winrate") {
-  bodyHtml = `
-    ${plural(games, "game")}.
-    ${plural(wins, "win")}, ${plural(losses, "loss")}.
-    ${wrText} win rate.
-  `;
-} else if (mode === "games") {
-  bodyHtml = `
-    ${plural(games, "game")}. 
-    ${plural(wins, "win")}, ${plural(losses, "loss")}, ${wrText}. 
-    ${formatValue(Math.abs(total), "total")} points ${total >= 0 ? "gained." : "lost."}
-  `;
-} else {
-  const value = mode === "total" ? total : perGame;
-  const absVal = formatValue(Math.abs(value), mode);
+          let tooltipX = rect.left + window.pageXOffset + x + 14;
+          let tooltipY = rect.top + window.pageYOffset + y - 12;
 
-  bodyHtml = `
-    ${plural(wins, "win")}, ${plural(losses, "loss")}, ${wrText}. 
-    ${absVal} ${value < 0
-      ? (mode === "total" ? "points lost." : "points lost per game.")
-      : (mode === "total" ? "points gained." : "points gained per game.")}
-  `;
-}
+          const ttWidth  = tooltipEl.offsetWidth;
+          const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
 
+          if (tooltipX + ttWidth > viewportWidth - 6) {
+            tooltipX = viewportWidth - ttWidth - 6;
+          }
+          if (tooltipX < 0) tooltipX = 0;
 
-
-
-
-tooltipEl.innerHTML = `
-  <div style="font-weight:bold;margin-bottom:3px;">${allyName}</div>
-  <div style="font-family:monospace; opacity:0.85;">
-    ${bodyHtml}
-  </div>
-`;
-
-
-const rect = ctx.chart.canvas.getBoundingClientRect();
-    const mouse = ctx.chart.tooltip?._eventPosition;
-    const x = mouse ? mouse.x : tooltip.caretX;
-    const y = mouse ? mouse.y : tooltip.caretY;
-
-// Desired position
-let tooltipX = rect.left + window.pageXOffset + x + 14;
-let tooltipY = rect.top + window.pageYOffset + y - 12;
-
-// Tooltip size
-const ttWidth  = tooltipEl.offsetWidth;
-const ttHeight = tooltipEl.offsetHeight;
-
-const viewportWidth  = window.visualViewport?.width  ?? window.innerWidth;
-const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-
-// Clamp horizontally
-if (tooltipX + ttWidth > viewportWidth - 6) {
-  tooltipX = viewportWidth - ttWidth - 6;
-}
-if (tooltipX < 0) {
-  tooltipX = 0;
-}
-
-
-
-
-
-
-tooltipEl.style.left = tooltipX + "px";
-tooltipEl.style.top  = tooltipY + "px";
-tooltipEl.style.opacity = 1;
-}
+          tooltipEl.style.left = tooltipX + "px";
+          tooltipEl.style.top  = tooltipY + "px";
+          tooltipEl.style.opacity = 1;
+        }
       }
     },
 
     scales: {
-  x: {
-    min: mode === "winrate" ? 0 : undefined,
-    max: mode === "winrate" ? 100 : undefined,
-    beginAtZero: true,
-    grid: { color: "#222" },
-    ticks: {
-      color: "#AAA",
-      callback: function (value) {
-        return mode === "winrate" ? value + "%" : value;
+      x: {
+        min: mode === "winrate" ? 0 : undefined,
+        max: mode === "winrate" ? 100 : undefined,
+        beginAtZero: true,
+        grid: { color: "#222" },
+        ticks: {
+          color: "#AAA",
+          callback: value =>
+            mode === "winrate" ? value + "%" : value
+        }
+      },
+      y: {
+        ticks: { color: "#AAA" }
       }
     }
-  },
-  y: {
-    ticks: { color: "#AAA" }
-  }
-}
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let drawer5ChartInstance = null;
+let drawer5DataCache = null;
+
+const DRAWER5_CHART_MODES = [
+  "games",
+  "winrate",
+  "total",
+  "pergame"
+];
+
+function updateDrawer5ChartIndicator(mode) {
+  const el = document.getElementById("extraChart5Indicator");
+  if (!el) return;
+
+  const map = {
+    games: "(1/4)",
+    winrate: "(2/4)",
+    total: "(3/4)",
+    pergame: "(4/4)"
+  };
+
+  el.textContent = map[mode] ?? "";
+}
+
+
+function updateExtraChart5Height(barCount) {
+  const base = 340;
+  const extra = Math.max(0, barCount - 10);
+  const height = base + extra * 24;
+
+  const container = document.getElementById("extraChart5Container");
+  if (container) {
+    container.style.height = height + "px";
+  }
+}
+
+
+async function loadDrawer5Chart(playerId) {
+  const season = window.viewingSeason;
+
+  let stats, names;
+  try {
+    [stats, names] = await Promise.all([
+      fetchNoCache(`data/seasons/${season}/statistics_data.json`).then(r => r.json()),
+      loadNames(season)
+    ]);
+  } catch (err) {
+    console.error("[drawer5] loading error:", err);
+    return;
+  }
+
+  const raw = stats?.drawer5?.[playerId];
+  if (!raw) return;
+
+  drawer5DataCache = parseDrawer5Data(raw, names);
+  updateExtraChart5Height(drawer5DataCache.length);
+
+  drawDrawer5Games(drawer5DataCache);
+
+  const labelEl = document.getElementById("extraChart5Label");
+  const toggleEl = document.getElementById("chartModeToggle5");
+  if (!labelEl || !toggleEl) return;
+
+  labelEl.textContent = "Number of Games Played Against Each Opponent";
+  toggleEl.dataset.mode = "games";
+  toggleEl.textContent = "Show Win Rate";
+  toggleEl.style.display = "inline-block";
+
+  updateDrawer5ChartIndicator("games");
+
+  toggleEl.onclick = () => {
+    const current = toggleEl.dataset.mode;
+    const next =
+      DRAWER5_CHART_MODES[
+        (DRAWER5_CHART_MODES.indexOf(current) + 1) %
+        DRAWER5_CHART_MODES.length
+      ];
+
+    toggleEl.dataset.mode = next;
+    updateDrawer5ChartIndicator(next);
+
+    if (next === "games") {
+      drawDrawer5Games(drawer5DataCache);
+      labelEl.textContent = "Number of Games Played Against Each Opponent";
+      toggleEl.textContent = "Show Win Rate";
+
+    } else if (next === "winrate") {
+      drawDrawer5WinRate(drawer5DataCache);
+      labelEl.textContent = "Win Rate Against Each Opponent";
+      toggleEl.textContent = "Show Total Points";
+
+    } else if (next === "total") {
+      drawDrawer5Total(drawer5DataCache);
+      labelEl.textContent = "Points Gained Against Each Opponent";
+      toggleEl.textContent = "Show Points Lost per Game";
+
+    } else {
+      drawDrawer5PerGame(drawer5DataCache);
+      labelEl.textContent = "Points Gained per Game Against Each Opponent";
+      toggleEl.textContent = "Show Games Played";
+    }
+
+    updateExtraChart5Height(drawer5DataCache.length);
+  };
+}
+
+
+function parseDrawer5Data(obj, names) {
+  return Object.entries(obj || {})
+    .map(([enemyId, arr]) => {
+      const [mmr, wins, losses] = arr ?? [0, 0, 0];
+      const games = (wins ?? 0) + (losses ?? 0);
+      const winRate = games > 0 ? wins / games : 0;
+
+      return {
+        enemyId,
+        enemyName: names?.[enemyId] || enemyId,
+        total: mmr ?? 0,
+        wins: wins ?? 0,
+        losses: losses ?? 0,
+        games,
+        perGame: games > 0 ? mmr / games : 0,
+        winRate
+      };
+    })
+    .sort((a, b) => b.games - a.games);
+}
+
+
+function resetDrawer5Chart() {
+  if (drawer5ChartInstance) {
+    try { drawer5ChartInstance.destroy(); } catch {}
+    drawer5ChartInstance = null;
+  }
+}
+
+function calcBarThicknessOppo(listLength) {
+  const max = 15;
+  const quota = 600;                   
+  if (listLength <= 0) return max;
+  return Math.min(max, Math.floor(quota / listLength));
+}
+
+
+
+
+
+function drawDrawer5Games(list) {
+  resetDrawer5Chart();
+
+  const sorted = [...list].sort((a, b) => b.games - a.games);
+  const canvas = document.getElementById("extraChart5");
+  if (!canvas) return;
+
+  drawer5ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.enemyName),
+      datasets: [{
+        data: sorted.map(x => x.games),
+        backgroundColor: "#8A5A44",
+        barThickness: calcBarThicknessOppo(sorted.length),
+        maxBarThickness: 44
+      }]
+    },
+    options: drawer5ChartOptions("games", sorted)
+  });
+}
+
+/*        REGULAR
+function drawDrawer5WinRate(list) {
+  resetDrawer5Chart();
+
+  const MIN_GAMES = 5;
+  const filtered = list.filter(x => x.games >= MIN_GAMES);
+  if (!filtered.length) return;
+
+  const sorted = filtered.sort((a, b) => b.winRate - a.winRate);
+  const canvas = document.getElementById("extraChart5");
+  if (!canvas) return;
+
+  drawer5ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.enemyName),
+      datasets: [{
+        data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
+        backgroundColor: sorted.map(x => winRateColor(x.winRate)),
+        barThickness: calcBarThickness44(sorted.length)
+      }]
+    },
+    options: drawer5ChartOptions("winrate", sorted)
+  });
+}
+
+*/
+
+function drawDrawer5WinRate(list) {
+  resetDrawer5Chart();
+
+  if (!list.length) return;
+
+  const sorted = [...list].sort((a, b) => b.winRate - a.winRate);
+
+  const canvas = document.getElementById("extraChart5");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const thickness = calcBarThicknessOppo(sorted.length);
+
+  drawer5ChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.enemyName),
+      datasets: [{
+        data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
+        backgroundColor: sorted.map(x => winRateColor(x.winRate)),
+        barThickness: thickness,
+        maxBarThickness: 44
+      }]
+    },
+    options: drawer5ChartOptions("winrate", sorted)
+  });
+}
+
+
+
+
+
+
+function drawDrawer5Total(list) {
+  resetDrawer5Chart();
+
+  const sorted = [...list].sort((a, b) => b.total - a.total);
+  const canvas = document.getElementById("extraChart5");
+  if (!canvas) return;
+
+  const colorFn = makeMmrColorFunction(sorted, "total");
+
+  drawer5ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.enemyName),
+      datasets: [{
+        data: sorted.map(x => x.total),
+        backgroundColor: sorted.map(x => colorFn(x.total)),
+        barThickness: calcBarThicknessOppo(sorted.length)
+      }]
+    },
+    options: drawer5ChartOptions("total", sorted)
+  });
+}
+
+function drawDrawer5PerGame(list) {
+  resetDrawer5Chart();
+
+  
+  const sorted = [...list].sort((a, b) => b.perGame - a.perGame);
+  const canvas = document.getElementById("extraChart5");
+  if (!canvas) return;
+
+  const colorFn = makeMmrColorFunction(sorted, "pergame");
+
+  drawer5ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.enemyName),
+      datasets: [{
+        data: sorted.map(x => x.perGame),
+        backgroundColor: sorted.map(x => colorFn(x.perGame)),
+        barThickness: calcBarThicknessOppo(sorted.length)
+      }]
+    },
+    options: drawer5ChartOptions("pergame", sorted)
+  });
+}
+
+
+function drawer5ChartOptions(mode, list) {
+  return drawer4ChartOptions(mode, list)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function loadMapNames() {
+  return fetchNoCache("data/maps.json").then(r => r.json());
+}
+
+
+
+
+
+let drawer6ChartInstance = null;
+let drawer6DataCache = null;
+
+const DRAWER6_CHART_MODES = [
+  "games",
+  "winrate",
+  "total",
+  "pergame"
+];
+
+
+function updateDrawer6ChartIndicator(mode) {
+  const el = document.getElementById("extraChart6Indicator");
+  if (!el) return;
+
+  const map = {
+    games: "(1/4)",
+    winrate: "(2/4)",
+    total: "(3/4)",
+    pergame: "(4/4)"
+  };
+
+  el.textContent = map[mode] ?? "";
+}
+
+
+function updateExtraChart6Height(barCount) {
+  const base = 340;
+  const extra = Math.max(0, barCount - 10);
+  const height = base + extra * 24;
+
+  const container = document.getElementById("extraChart6Container");
+  if (container) {
+    container.style.height = height + "px";
+  }
+}
+
+
+function parseDrawer6MapData(obj, mapNames) {
+  return Object.entries(obj || {})
+    .map(([mapId, arr]) => {
+      const [points, wins, losses] = arr ?? [0, 0, 0];
+      const games = (wins ?? 0) + (losses ?? 0);
+      const winRate = games > 0 ? wins / games : 0;
+
+      return {
+        mapId,
+        mapName: mapNames?.[mapId] || mapId,
+        total: points ?? 0,
+        wins: wins ?? 0,
+        losses: losses ?? 0,
+        games,
+        perGame: games > 0 ? points / games : 0,
+        winRate
+      };
+    })
+    .sort((a, b) => b.games - a.games);
+}
+
+
+async function loadDrawer6MapsChart(playerId) {
+  const season = window.viewingSeason;
+
+  let stats, mapNames;
+  try {
+    [stats, mapNames] = await Promise.all([
+      fetchNoCache(`data/seasons/${season}/statistics_data.json`).then(r => r.json()),
+      loadMapNames()
+    ]);
+  } catch (err) {
+    console.error("[drawer6-maps] loading error:", err);
+    return;
+  }
+
+  const raw = stats?.maps?.[playerId];
+  if (!raw) return;
+
+  drawer6DataCache = parseDrawer6MapData(raw, mapNames);
+  updateExtraChart6Height(drawer6DataCache.length);
+
+  drawDrawer6Games(drawer6DataCache);
+
+  const labelEl = document.getElementById("extraChart6Label");
+  const toggleEl = document.getElementById("chartModeToggle6");
+  if (!labelEl || !toggleEl) return;
+
+  labelEl.textContent = "Number of Games Played on Each Map";
+  toggleEl.dataset.mode = "games";
+  toggleEl.textContent = "Show Win Rates";
+  toggleEl.style.display = "inline-block";
+
+  updateDrawer6ChartIndicator("games");
+
+  toggleEl.onclick = () => {
+    const current = toggleEl.dataset.mode;
+    const next =
+      DRAWER6_CHART_MODES[
+        (DRAWER6_CHART_MODES.indexOf(current) + 1) %
+        DRAWER6_CHART_MODES.length
+      ];
+
+    toggleEl.dataset.mode = next;
+    updateDrawer6ChartIndicator(next);
+
+    if (next === "games") {
+      drawDrawer6Games(drawer6DataCache);
+      labelEl.textContent = "Number of Games Played on Each Map";
+      toggleEl.textContent = "Show Win Rates";
+
+    } else if (next === "winrate") {
+      drawDrawer6WinRate(drawer6DataCache);
+      labelEl.textContent = "Win Rate on Frequently Played Maps";
+      toggleEl.textContent = "Show Total Points";
+
+    } else if (next === "total") {
+      drawDrawer6Total(drawer6DataCache);
+      labelEl.textContent = "Points Gained on Each Map";
+      toggleEl.textContent = "Show Points per Game";
+
+    } else {
+      drawDrawer6PerGame(drawer6DataCache);
+      labelEl.textContent = "Points Gained per Game on Each Map";
+      toggleEl.textContent = "Show Games Played";
+    }
+
+    updateExtraChart6Height(drawer6DataCache.length);
+  };
+}
+
+function resetDrawer6Chart() {
+  if (drawer6ChartInstance) {
+    try { drawer6ChartInstance.destroy(); } catch {}
+    drawer6ChartInstance = null;
+  }
+}
+
+
+function calcBarThicknessMaps(listLength) {
+  const max = 440;
+  const quota = 250;                   
+  if (listLength <= 0) return max;
+  return Math.min(max, Math.floor(quota / listLength));
+}
+
+
+
+function calcBarThicknessMaps2(listLength) {
+  const max = 440;
+  const quota = 250;                   
+  if (listLength <= 0) return max;
+  return Math.min(max, Math.floor(quota / listLength));
+}
+
+
+
+
+
+
+
+
+
+
+function drawDrawer6Games(list) {
+  resetDrawer6Chart();
+
+  const sorted = [...list].sort((a, b) => b.games - a.games);
+  const canvas = document.getElementById("extraChart6");
+  if (!canvas) return;
+
+  drawer6ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.mapName),
+      datasets: [{
+        data: sorted.map(x => x.games),
+        backgroundColor: "#6B8E6E",
+        barThickness: calcBarThicknessMaps(sorted.length),
+        maxBarThickness: 44
+      }]
+    },
+    options: drawer4ChartOptions("games", sorted)
+  });
+}
+
+/*
+function drawDrawer6WinRate(list) {
+  resetDrawer6Chart();
+
+  const sorted = [...list].sort((a, b) => b.winRate - a.winRate);
+  const canvas = document.getElementById("extraChart6");
+  if (!canvas) return;
+
+  drawer6ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.mapName),
+      datasets: [{
+        data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
+        backgroundColor: sorted.map(x => winRateColor(x.winRate)),
+        barThickness: calcBarThicknessMaps(sorted.length)
+      }]
+    },
+    options: drawer4ChartOptions("winrate", sorted)
+  });
+}
+
+*/
+
+function drawDrawer6WinRate(list) {
+  resetDrawer6Chart();
+
+  const MIN_GAMES = 5;
+  const filtered = list.filter(x => x.games >= MIN_GAMES);
+  if (!filtered.length) return;
+
+  const sorted = filtered.sort((a, b) => b.winRate - a.winRate);
+  const canvas = document.getElementById("extraChart6");
+  if (!canvas) return;
+
+  drawer6ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.mapName),
+      datasets: [{
+        data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
+        backgroundColor: sorted.map(x => winRateColor(x.winRate)),
+        barThickness: calcBarThicknessMaps2(sorted.length),
+        maxBarThickness: 500
+      }]
+    },
+    options: drawer4ChartOptions("winrate", sorted)
+  });
+}
+
+
+
+function drawDrawer6Total(list) {
+  resetDrawer6Chart();
+
+  const sorted = [...list].sort((a, b) => b.total - a.total);
+  const canvas = document.getElementById("extraChart6");
+  if (!canvas) return;
+
+  const colorFn = makeMmrColorFunction(sorted, "total");
+
+  drawer6ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.mapName),
+      datasets: [{
+        data: sorted.map(x => x.total),
+        backgroundColor: sorted.map(x => colorFn(x.total)),
+        barThickness: calcBarThicknessMaps(sorted.length)
+      }]
+    },
+    options: drawer4ChartOptions("total", sorted)
+  });
+}
+
+
+
+function drawDrawer6PerGame(list) {
+  resetDrawer6Chart();
+
+  const sorted = [...list].sort((a, b) => b.perGame - a.perGame);
+  const canvas = document.getElementById("extraChart6");
+  if (!canvas) return;
+
+  const colorFn = makeMmrColorFunction(sorted, "pergame");
+
+  drawer6ChartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: sorted.map(x => x.mapName),
+      datasets: [{
+        data: sorted.map(x => x.perGame),
+        backgroundColor: sorted.map(x => colorFn(x.perGame)),
+        barThickness: calcBarThicknessMaps(sorted.length)
+      }]
+    },
+    options: drawer4ChartOptions("pergame", sorted)
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

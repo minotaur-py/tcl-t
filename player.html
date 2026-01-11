@@ -49,6 +49,7 @@ body tr:hover {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  user-select: none;
 
   padding: 3px 9px;
   border-radius: 999px;
@@ -181,6 +182,7 @@ body tr:hover {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  white-space: nowrap;
   z-index: 10;
   text-align: center;
   padding: 0;
@@ -363,6 +365,7 @@ body tr:hover {
   vertical-align: middle;
   margin-right: 5px; 
   object-fit: contain;
+  user-select: none;
 }
 
 .match-info {
@@ -382,11 +385,8 @@ body tr:hover {
   max-height: 0;
   overflow: hidden;
   transition: max-height .4s ease;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 35px;
   margin-top: 30px;
-  padding: 20px 0 0 0; 
+  padding: 20px 0 0 0;
 }
 
 #extra-stats.open {
@@ -394,9 +394,16 @@ body tr:hover {
   padding-bottom: 33px;
 }
 
+/* NEW: 2×2 GRID WRAPPER */
+.extra-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 35px;
+}
+
+/* BUTTON (unchanged) */
 .extra-stats-btn {
   margin-top: 0px;
-  
   padding: 10px 12px;
   background-color: #2b2b2b;
   border: 1px solid var(--border);
@@ -411,8 +418,9 @@ body tr:hover {
   background-color: #3a3a3a;
 }
 
-
-.extra-chart, .extra-chart-tall {
+/* CHART CONTAINERS (unchanged core styles) */
+.extra-chart,
+.extra-chart-tall {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -423,15 +431,26 @@ body tr:hover {
   border-radius: 10px;
 }
 
+/* TOP ROW CHARTS */
 .extra-chart {
   height: 350px;
 }
 
+/* TALL CHARTS (used inside stacks) */
 .extra-chart-tall {
   height: 1050px;
 }
 
-.extra-chart canvas, .extra-chart-tall canvas {
+/* NEW: STACKED BOTTOM CELLS */
+.extra-chart-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+}
+
+/* CANVAS BEHAVIOR (unchanged) */
+.extra-chart canvas,
+.extra-chart-tall canvas {
   width: 100%;
   height: 100%;
   display: block;
@@ -490,6 +509,7 @@ body tr:hover {
   border: none;
   padding: 0;
   cursor: pointer;
+  user-select: none;
   display: none;
 }
 
@@ -602,90 +622,141 @@ body tr:hover {
       
     </div>
 
-    <!-- MIDDLE -->
+    
     <div class="overview-chart">
       <canvas id="ratingChart"></canvas>
       <div class="chart-label">Points Progression</div>
     </div>
 
-    <!-- RIGHT -->
+    
     <div class="overview-chart">
       <canvas id="raceChart"></canvas>
       <div class="chart-label">Race Selection</div>
     </div>
   </div>
 
-  <!-- Additional statistics drawer -->
+  
 
 <div id="extra-stats">
+
+  
+  <div class="extra-stats-grid">
+
+   
+
+    <!-- Chart 1 -->
     <div class="extra-chart">
-        <canvas id="extraChart1"  height="260"></canvas>
+      <canvas id="extraChart1" height="260"></canvas>
 
-        <div class="chart-footer">
-    <div class="chart-indicator" id="extraChart1Indicator">(1/3)</div>
+      <div class="chart-footer">
+        <div class="chart-indicator" id="extraChart1Indicator">(1/3)</div>
+        <div class="chart-label" id="extraChart1Label">Loading...</div>
 
-    <div class="chart-label" id="extraChart1Label">Loading...</div>
-
-    <button id="chartModeToggle" class="chart-mode-btn">
-        Show Points per Game
-    </button>
-</div>
+        <button id="chartModeToggle" class="chart-mode-btn">
+          Show Points per Game
+        </button>
+      </div>
     </div>
-    
+
+    <!-- Chart 2 -->
     <div class="extra-chart">
-        <canvas id="extraChart2" height="260"></canvas> 
-        
-        <div class="chart-footer">
-    <div class="chart-indicator" id="extraChart2Indicator">(1/4)</div>
+      <canvas id="extraChart2" height="260"></canvas>
 
-    <div class="chart-label" id="extraChart2Label">Loading...</div>
+      <div class="chart-footer">
+        <div class="chart-indicator" id="extraChart2Indicator">(1/4)</div>
+        <div class="chart-label" id="extraChart2Label">Loading...</div>
 
-    <button id="chartModeToggle2" class="chart-mode-btn">
-        Show Points per Game
-    </button>
-</div>
+        <button id="chartModeToggle2" class="chart-mode-btn">
+          Show Points per Game
+        </button>
+      </div>
     </div>
+
+    
+    <!-- bot left -->
     
 
+    <div class="extra-chart-stack" id="bottomStackLeft">
 
-<div class="extra-chart-tall" id="extraChart3Container">
-        <canvas id="extraChart3" height="260"></canvas> 
-        
+      <!-- Chart 3 -->
+      <div class="extra-chart-tall" id="extraChart3Container">
+        <canvas id="extraChart3" height="260"></canvas>
+
         <div class="chart-footer">
-            <div class="chart-indicator" id="extraChart3Indicator">(1/4)</div>
-            <div class="chart-label" id="extraChart3Label">Loading...</div>
-            
-            <button id="chartModeToggle3" class="chart-mode-btn" style="display: none;">
-                Show MMR per Game
-            </button>
+          <div class="chart-indicator" id="extraChart3Indicator">(1/4)</div>
+          <div class="chart-label" id="extraChart3Label">Loading...</div>
+
+          <button
+            id="chartModeToggle3"
+            class="chart-mode-btn"
+            style="display: none;">
+            Show MMR per Game
+          </button>
         </div>
-    </div>
+      </div>
 
+      <!-- Chart 5 -->
+      <div class="extra-chart-tall" id="extraChart5Container">
+        <canvas id="extraChart5"></canvas>
 
-
-
-
-
-   <div class="extra-chart-tall" id="extraChart4Container">
-        <canvas id="extraChart4" height="260"></canvas> 
-        
         <div class="chart-footer">
-            <div class="chart-indicator" id="extraChart4Indicator">(1/4)</div>
-            <div class="chart-label" id="extraChart4Label">Loading...</div>
-            
-            <button id="chartModeToggle4" class="chart-mode-btn" style="display: none;">
-                Show MMR per Game
-            </button>
+          <div class="chart-indicator" id="extraChart5Indicator">(1/4)</div>
+          <div class="chart-label" id="extraChart5Label">Loading...</div>
+
+          <button
+            id="chartModeToggle5"
+            class="chart-mode-btn"
+            style="display: none;">
+            Show Win Rates
+          </button>
         </div>
+      </div>
+
     </div>
-    
-
-
-
-
-
 
     
+    <!-- bot right -->
+    
+
+    <div class="extra-chart-stack" id="bottomStackRight">
+
+      <!-- Chart 4 -->
+      <div class="extra-chart-tall" id="extraChart4Container">
+        <canvas id="extraChart4" height="260"></canvas>
+
+        <div class="chart-footer">
+          <div class="chart-indicator" id="extraChart4Indicator">(1/4)</div>
+          <div class="chart-label" id="extraChart4Label">Loading...</div>
+
+          <button
+            id="chartModeToggle4"
+            class="chart-mode-btn"
+            style="display: none;">
+            Show MMR per Game
+          </button>
+        </div>
+      </div>
+
+      <!-- Chart 6 -->
+      <div class="extra-chart-tall" id="extraChart6Container">
+        <canvas id="extraChart6"></canvas>
+
+        <div class="chart-footer">
+          <div class="chart-indicator" id="extraChart6Indicator">(1/4)</div>
+          <div class="chart-label" id="extraChart6Label">Loading...</div>
+
+          <button
+            id="chartModeToggle6"
+            class="chart-mode-btn"
+            style="display: none;">
+            Show Win Rates
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
 </div>
 
 </section>
