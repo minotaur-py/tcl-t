@@ -1178,7 +1178,7 @@ function formatValue(value, mode) {
   
   // Shared chart styling
   
-  function chartOptions(mode, playerStats, barThickness = 56) {
+  function chartOptions(mode, playerStats) {
 
   
   let tooltipEl = document.getElementById("bar-tooltip");
@@ -1210,11 +1210,7 @@ function formatValue(value, mode) {
     maintainAspectRatio: false,
     indexAxis: "y",
 
-    datasets: {
-      bar: {
-        barThickness: barThickness			
-      }
-    },
+    
 
     plugins: {
       legend: { display: false },
@@ -1544,7 +1540,7 @@ function drawMatchupChartGames(list) {
 
   const sorted = [...list].sort((a, b) => b.games - a.games);
   const ctx = document.getElementById("extraChart2").getContext("2d");
-  const thickness = calcBarThickness(sorted.length);
+  
 
   matchupChartInstance = new Chart(ctx, {
     type: "bar",
@@ -1555,11 +1551,11 @@ function drawMatchupChartGames(list) {
         backgroundColor: sorted.map(x =>
           x.games === 0 ? "#161616" : matchupColor(x.key)
         ),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: matchupChartOptions("games", sorted, thickness)
+    options: matchupChartOptions("games", sorted)
   });
 }
 
@@ -1570,7 +1566,7 @@ function drawMatchupChartWinrate(list) {
 
   const sorted = [...list].sort((a, b) => b.winrate - a.winrate);
   const ctx = document.getElementById("extraChart2").getContext("2d");
-  const thickness = calcBarThickness(sorted.length);
+  
 
   matchupChartInstance = new Chart(ctx, {
     type: "bar",
@@ -1581,11 +1577,11 @@ function drawMatchupChartWinrate(list) {
         backgroundColor: sorted.map(x =>
           x.games === 0 ? "#161616" : matchupColor(x.key)
         ),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: matchupChartOptions("winrate", sorted, thickness)
+    options: matchupChartOptions("winrate", sorted)
   });
 }
 
@@ -1609,7 +1605,7 @@ function drawMatchupChartTotal(list) {
   resetMatchupChart();
 
   const ctx = document.getElementById("extraChart2").getContext("2d");
-  const thickness = calcBarThickness(list.length);
+  
 
   matchupChartInstance = new Chart(ctx, {
     type: "bar",
@@ -1618,11 +1614,11 @@ function drawMatchupChartTotal(list) {
       datasets: [{
         data: list.map(x => x.total),
         backgroundColor: list.map(x => matchupColor(x.key)),
-        barThickness: thickness,       
+             
         maxBarThickness: 44            
       }]
     },
-    options: matchupChartOptions("total", list, thickness)
+    options: matchupChartOptions("total", list)
   });
 }
 
@@ -1633,7 +1629,7 @@ function drawMatchupChartPerGame(list) {
   const sorted = [...list].sort((a, b) => b.perGame - a.perGame);
 
   const ctx = document.getElementById("extraChart2").getContext("2d");
-  const thickness = calcBarThickness(sorted.length);
+  
 
   matchupChartInstance = new Chart(ctx, {
     type: "bar",
@@ -1642,11 +1638,11 @@ function drawMatchupChartPerGame(list) {
       datasets: [{
         data: sorted.map(x => x.perGame),
         backgroundColor: sorted.map(x => matchupColor(x.key)),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: matchupChartOptions("pergame", sorted, thickness)
+    options: matchupChartOptions("pergame", sorted)
   });
 }
 
@@ -1661,41 +1657,11 @@ function matchupColor(key) {
 }
 
 
-function calcBarThickness(listLength) {               
-  const max = 42;
-  const quota = 132;
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
-
-function calcBarThicknessHigh(listLength) {
-  const max = 440;
-  const quota = 192;                   
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
-
-
-function calcBarThickness44(listLength) {
-  const max = 44;
-  const quota = 192;                   
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
-
-
-function calcBarThicknessHigh3(listLength) {
-  const max = 44;
-  const quota = 250;                   
-  if (listLength <= 0) return max;
-  
-  return Math.min(max, Math.floor(quota / listLength));
-}
 
 
 
 
-function matchupChartOptions(mode, list, barThickness = 44) {
+function matchupChartOptions(mode, list) {
   let tooltipEl = document.getElementById("bar-tooltip-matchups");
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
@@ -1723,7 +1689,7 @@ function matchupChartOptions(mode, list, barThickness = 44) {
 
     datasets: {
       bar: {
-        barThickness,
+        
         maxBarThickness: 44
       }
     },
@@ -1876,6 +1842,20 @@ function arrangeBottomCharts({ drawer3Count, drawer4Count }) {
   left.replaceChildren();
   right.replaceChildren();
 
+if (drawer3Count >= drawer4Count + 2) {
+    
+    // LEFT: 3 + 6  |  RIGHT: 4 + 5
+    left.append(c3, c6);
+    right.append(c4, c5);
+} else {
+    
+    // LEFT: 3 + 5  |  RIGHT: 4 + 6
+    left.append(c3, c5);
+    right.append(c4, c6);
+}
+}
+/*
+
   if (drawer3Count > drawer4Count) {
     // LEFT: 3 + 6  |  RIGHT: 4 + 5
     left.append(c3, c6);
@@ -1885,7 +1865,12 @@ function arrangeBottomCharts({ drawer3Count, drawer4Count }) {
     left.append(c3, c5);
     right.append(c4, c6);
   }
-}
+
+
+
+
+*/
+
 
 
 
@@ -2127,7 +2112,7 @@ function drawDrawer3Total(list) {
   resetDrawer3Chart();
 
   const ctx = document.getElementById("extraChart3").getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(list.length));
+  
 
   drawer3ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -2136,11 +2121,11 @@ function drawDrawer3Total(list) {
       datasets: [{
         data: list.map(x => x.total),
         backgroundColor: list.map(x => matchupColor(x.key[0])),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer3ChartOptions("total", list, thickness)
+    options: drawer3ChartOptions("total", list)
   });
 }
 
@@ -2152,7 +2137,7 @@ function drawDrawer3PerGame(list) {
   const sorted = [...list].sort((a, b) => b.perGame - a.perGame);
 
   const ctx = document.getElementById("extraChart3").getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(list.length));
+  
 
   drawer3ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -2161,11 +2146,11 @@ function drawDrawer3PerGame(list) {
       datasets: [{
         data: sorted.map(x => x.perGame),
         backgroundColor: sorted.map(x => matchupColor(x.key[0])),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer3ChartOptions("pergame", sorted, thickness)
+    options: drawer3ChartOptions("pergame", sorted)
   });
 }
 
@@ -2175,7 +2160,7 @@ function drawDrawer3Games(list) {
 
   const sorted = [...list].sort((a, b) => b.games - a.games);
   const ctx = document.getElementById("extraChart3").getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(sorted.length));
+  
 
   drawer3ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -2184,11 +2169,11 @@ function drawDrawer3Games(list) {
       datasets: [{
         data: sorted.map(x => x.games),
         backgroundColor: sorted.map(x => matchupColor(x.key[0])),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer3ChartOptions("games", sorted, thickness)
+    options: drawer3ChartOptions("games", sorted)
   });
 }
 
@@ -2203,7 +2188,7 @@ function drawDrawer3Winrate(list) {
   );
 
   const ctx = document.getElementById("extraChart3").getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(sorted.length));
+  
 
   drawer3ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -2212,11 +2197,11 @@ function drawDrawer3Winrate(list) {
       datasets: [{
         data: sorted.map(x => x.games ? (x.wins / x.games) * 100 : 0),
         backgroundColor: sorted.map(x => matchupColor(x.key[0])),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer3ChartOptions("winrate", sorted, thickness)
+    options: drawer3ChartOptions("winrate", sorted)
   });
 }
 
@@ -2224,7 +2209,7 @@ function drawDrawer3Winrate(list) {
 
 
 
-function drawer3ChartOptions(mode, list, barThickness) {
+function drawer3ChartOptions(mode, list) {
   let tooltipEl = document.getElementById("bar-tooltip-drawer3");
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
@@ -2263,7 +2248,7 @@ function drawer3ChartOptions(mode, list, barThickness) {
 
     datasets: {
       bar: {
-        barThickness,
+        
         maxBarThickness: 44
       }
     },
@@ -2670,7 +2655,7 @@ function drawDrawer4Total(list) {
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(list.length));
+  
   const colorFn = makeMmrColorFunction(list, "total");
 
   drawer4ChartInstance = new Chart(ctx, {
@@ -2680,11 +2665,11 @@ function drawDrawer4Total(list) {
       datasets: [{
         data: list.map(x => x.total),
         backgroundColor: list.map(x => colorFn(x.total)),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer4ChartOptions("total", list, thickness)
+    options: drawer4ChartOptions("total", list)
   });
 }
 
@@ -2698,7 +2683,7 @@ function drawDrawer4PerGame(list) {
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(list.length));
+  
   const colorFn = makeMmrColorFunction(sorted, "pergame");
 
   drawer4ChartInstance = new Chart(ctx, {
@@ -2708,11 +2693,11 @@ function drawDrawer4PerGame(list) {
       datasets: [{
         data: sorted.map(x => x.perGame),
         backgroundColor: sorted.map(x => colorFn(x.perGame)),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer4ChartOptions("pergame", sorted, thickness)
+    options: drawer4ChartOptions("pergame", sorted)
   });
 }
 
@@ -2727,7 +2712,7 @@ function drawDrawer4Games(list) {
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const thickness = Math.max(14, calcBarThicknessHigh(sorted.length));
+  
 
   drawer4ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -2736,11 +2721,11 @@ function drawDrawer4Games(list) {
       datasets: [{
         data: sorted.map(x => x.games),
         backgroundColor: "#4A6FA5",
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
-    options: drawer4ChartOptions("games", sorted, thickness)
+    options: drawer4ChartOptions("games", sorted)
   });
 }
 
@@ -2756,29 +2741,7 @@ function winRateColor(wr) {
 }
 
 
-function calcBarThicknessAllyB(listLength) {
-  const max = 44;
-  const quota = 400;                   
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
 
-/*           function drawDrawer4   o98wyehr*/
-
-/*
-
-
-
-sorted length: 6
-player.js?v=2:2797 originalCount: 10
-player.js?v=2:2798 currentCount: 6
-player.js?v=2:2800 Old Thickness: 32
-player.js?v=2:2801 New Thickness: 19
-
-
-
-
-*/
 
 
 function drawDrawer4WinRate(list) {
@@ -2800,17 +2763,6 @@ function drawDrawer4WinRate(list) {
   const ctx = canvas.getContext("2d");
   
 
-  const thickness_old = calcBarThicknessHigh(sorted.length);
-  const thickness = calcBarThicknessHigh(Math.round(sorted.length * currentCount / originalCount));
-  const thicknessREAL = Math.min(44, Math.round((sorted.length * originalCount) / currentCount));             
-  const thicknessg = calcBarThicknessHigh(sorted.length);
-  
-  console.log("sorted length:", sorted.length);
-  console.log("originalCount:", originalCount);
-  console.log("currentCount:", currentCount);  
-
-console.log("Old Thickness:", thickness_old);
-console.log("New Thickness:", thickness);
 
 
   drawer4ChartInstance = new Chart(ctx, {
@@ -2820,11 +2772,11 @@ console.log("New Thickness:", thickness);
       datasets: [{
         data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
         backgroundColor: sorted.map(x => winRateColor(x.winRate)),
-        barThickness: thickness,
+        
         maxBarThickness: 440
       }]
     },
-    options: drawer4ChartOptions("winrate", sorted, thickness)
+    options: drawer4ChartOptions("winrate", sorted)
   });
 }
 
@@ -3142,14 +3094,6 @@ function resetDrawer5Chart() {
   }
 }
 
-function calcBarThicknessOppo(listLength) {
-  const max = 15;
-  const quota = 600;                   
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
-
-
 
 
 
@@ -3167,7 +3111,7 @@ function drawDrawer5Games(list) {
       datasets: [{
         data: sorted.map(x => x.games),
         backgroundColor: "#8A5A44",
-        barThickness: calcBarThicknessOppo(sorted.length),
+        
         maxBarThickness: 44
       }]
     },
@@ -3194,7 +3138,7 @@ function drawDrawer5WinRate(list) {
       datasets: [{
         data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
         backgroundColor: sorted.map(x => winRateColor(x.winRate)),
-        barThickness: calcBarThickness44(sorted.length)
+        
       }]
     },
     options: drawer5ChartOptions("winrate", sorted)
@@ -3214,7 +3158,7 @@ function drawDrawer5WinRate(list) {
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const thickness = calcBarThicknessOppo(sorted.length);
+  
 
   drawer5ChartInstance = new Chart(ctx, {
     type: "bar",
@@ -3223,7 +3167,7 @@ function drawDrawer5WinRate(list) {
       datasets: [{
         data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
         backgroundColor: sorted.map(x => winRateColor(x.winRate)),
-        barThickness: thickness,
+        
         maxBarThickness: 44
       }]
     },
@@ -3252,7 +3196,7 @@ function drawDrawer5Total(list) {
       datasets: [{
         data: sorted.map(x => x.total),
         backgroundColor: sorted.map(x => colorFn(x.total)),
-        barThickness: calcBarThicknessOppo(sorted.length)
+        
       }]
     },
     options: drawer5ChartOptions("total", sorted)
@@ -3276,7 +3220,7 @@ function drawDrawer5PerGame(list) {
       datasets: [{
         data: sorted.map(x => x.perGame),
         backgroundColor: sorted.map(x => colorFn(x.perGame)),
-        barThickness: calcBarThicknessOppo(sorted.length)
+        
       }]
     },
     options: drawer5ChartOptions("pergame", sorted)
@@ -3458,24 +3402,6 @@ function resetDrawer6Chart() {
 }
 
 
-function calcBarThicknessMaps(listLength) {
-  const max = 440;
-  const quota = 250;                   
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
-
-
-
-function calcBarThicknessMaps2(listLength) {
-  const max = 440;
-  const quota = 250;                   
-  if (listLength <= 0) return max;
-  return Math.min(max, Math.floor(quota / listLength));
-}
-
-
-
 
 
 
@@ -3497,8 +3423,8 @@ function drawDrawer6Games(list) {
       datasets: [{
         data: sorted.map(x => x.games),
         backgroundColor: "#6B8E6E",
-        barThickness: calcBarThicknessMaps(sorted.length),
-        maxBarThickness: 44
+        
+        maxBarThickness: 440
       }]
     },
     options: drawer4ChartOptions("games", sorted)
@@ -3520,7 +3446,7 @@ function drawDrawer6WinRate(list) {
       datasets: [{
         data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
         backgroundColor: sorted.map(x => winRateColor(x.winRate)),
-        barThickness: calcBarThicknessMaps(sorted.length)
+        
       }]
     },
     options: drawer4ChartOptions("winrate", sorted)
@@ -3547,7 +3473,7 @@ function drawDrawer6WinRate(list) {
       datasets: [{
         data: sorted.map(x => +(x.winRate * 100).toFixed(1)),
         backgroundColor: sorted.map(x => winRateColor(x.winRate)),
-        barThickness: calcBarThicknessMaps2(sorted.length),
+        
         maxBarThickness: 500
       }]
     },
@@ -3573,7 +3499,7 @@ function drawDrawer6Total(list) {
       datasets: [{
         data: sorted.map(x => x.total),
         backgroundColor: sorted.map(x => colorFn(x.total)),
-        barThickness: calcBarThicknessMaps(sorted.length)
+        
       }]
     },
     options: drawer4ChartOptions("total", sorted)
@@ -3598,7 +3524,7 @@ function drawDrawer6PerGame(list) {
       datasets: [{
         data: sorted.map(x => x.perGame),
         backgroundColor: sorted.map(x => colorFn(x.perGame)),
-        barThickness: calcBarThicknessMaps(sorted.length)
+        
       }]
     },
     options: drawer4ChartOptions("pergame", sorted)
