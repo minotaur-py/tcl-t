@@ -161,6 +161,121 @@ canvas#irsChart {
    
 }
 
+
+.stats-select-wrap {
+  
+  position: relative; 
+  display: inline-block;
+  
+  top: auto;
+  right: auto;
+  z-index: 100;
+}
+
+
+
+/*
+.stats-select-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+*/
+
+
+
+
+
+.stats-select-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.stats-select-button:hover {
+  opacity: 1;
+}
+
+
+
+.stats-select-button img {
+  display: block;
+  user-select: none;
+}
+
+
+.stats-panel {
+  position: absolute;
+  top: calc(100% + 10px); 
+  right: 0;
+  background: #252525; 
+  color: #c2c2c2;
+  padding: 10px 0;
+  min-width: 220px; 
+  border: 1px solid #313131;
+  border-radius: 10px;
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+  z-index: 10000;
+}
+
+
+.stats-panel .season-header {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  padding: 6px 16px 12px;
+  pointer-events: none;
+}
+
+.stats-panel .season-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #d6d6d6;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background-color 0.08s ease;
+}
+
+
+.stats-panel .season-item:hover {
+  background: #2f2f2f;
+  color: #e0e0e0;
+}
+
+
+.stats-panel .current-season {
+  
+  background: rgba(137, 207, 240, 0.05);
+}
+
+
+.boks-header {
+  overflow: visible !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @media (max-width: 1600px) {
 body {
 
@@ -181,8 +296,17 @@ padding: 0 5%;
 
   <section id="panel-venstre">
     <div class="boks-header">
-      <span id="boksTittel">Statistics</span>
-    </div>
+  <span id="boksTittel">Statistics</span>
+  
+  <div class="stats-select-wrap">
+    <button id="stats-select-toggle" class="stats-select-button">
+      <img src="icons/fc.jpg" width="20" height="19" alt="Select statistics scope">
+    </button>
+
+    <div id="stats-select-panel" class="season-panel season-panel--archive stats-panel" hidden>
+      </div>
+  </div>
+</div>
 
 
 
@@ -292,7 +416,7 @@ padding: 0 5%;
 
 
 
-   <!-- Chart 1.25: Activity / day of the week. id = activityChart -->
+   <!-- Chart 1.25: Activity / day of the week. id = activityWeekdayChart -->
     <div class="boks-grid">
       <div class="info-boks">
         <div class="infoboks-tittel">Activity during the week</div>
@@ -312,7 +436,7 @@ padding: 0 5%;
 
 
 
-    <!-- Chart 1.5: Activity / time of day. id = activityChart -->
+    <!-- Chart 1.5: Activity / time of day. id = activityChartB -->
     <div class="boks-grid">
       <div class="info-boks">
         <div class="infoboks-tittel">Activity during the day</div>
@@ -331,24 +455,14 @@ padding: 0 5%;
   </section>
 
 
-<!-- DENNE BLOKKEN ER CHARTEKSPERIMENTET 
 
 
-<div class="boks-grid"> 
-  <div class="info-boks">
-    <div class="infoboks-tittel">Eksperiment / IRS Overview (Wins, Selections, Win Rate)</div>
-    <div style="line-height:1.6;color:#ccc;">
-      Clustered bars show wins and selections; the line represents win rate.
-    </div>
-  </div>
 
-  <div class="grafikk-boks">
-    <canvas id="irsBarLineChart" width="600" height="300"></canvas>
-    <div class="chart-label">IRS Overview</div>
-  </div>
-</div>
 
--->
+
+
+
+
 
 
 

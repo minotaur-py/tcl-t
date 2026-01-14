@@ -1,41 +1,147 @@
+let activityChartInstance = null;
+let activityWeekdayChartInstance = null;
+let activityClockChartInstance = null;
+let irsChartInstance = null;
+let teamFreqChartInstance = null;
+let matchupChartInstance = null;
+let winrateChartInstance = null;
+
+
+
+async function refreshStatistics() {
+  activityChartInstance?.destroy();
+  activityWeekdayChartInstance?.destroy();
+  activityClockChartInstance?.destroy();
+  irsChartInstance?.destroy();
+  teamFreqChartInstance?.destroy();
+  matchupChartInstance?.destroy();
+  winrateChartInstance?.destroy();
+
+  
+  activityChartInstance = null;
+  activityWeekdayChartInstance = null;
+  activityClockChartInstance = null;
+  irsChartInstance = null;
+  teamFreqChartInstance = null;
+  matchupChartInstance = null;
+  winrateChartInstance = null;
+
+  await loadAllStatisticsCharts();
+}
 
 
 
 const CHART_COLORS = {
-
-  
-
-
   ACTIVITY_BAR: "rgba(255,111,60,0.7)",
   ACTIVITY_BORDER: "#FF6F3C",
-
   FREQUENCY_BAR: "rgba(79,163,255,0.8)",
   FREQUENCY_BORDER: "#4FA3FF",
-
-
   WINRATE_BAR: "rgba(57,208,112,0.8)",
   WINRATE_BORDER: "#39D070",
-
-
 };
-
 
 const CHART_COLORSX = {
-  
-  ACTIVITY_BAR: "rgba(180, 80, 45, 0.7)", 
-  ACTIVITY_BORDER: "#B4502D", 
-
-  
-  FREQUENCY_BAR: "rgba(60, 110, 160, 0.8)", 
-  FREQUENCY_BORDER: "#3C6E9F", 
-
-  // --- WINRATE (Muted Green/Olive) ---
-  WINRATE_BAR: "rgba(65, 120, 80, 0.8)", 
-  WINRATE_BORDER: "#417850", 
+  ACTIVITY_BAR: "rgba(180, 80, 45, 0.7)",
+  ACTIVITY_BORDER: "#B4502D",
+  FREQUENCY_BAR: "rgba(60, 110, 160, 0.8)",
+  FREQUENCY_BORDER: "#3C6E9F",
+  WINRATE_BAR: "rgba(65, 120, 80, 0.8)",
+  WINRATE_BORDER: "#417850",
 };
 
+async function discoverSeasons() {
+  const seasons = [];
+  let i = 0;
 
+  while (true) {
+    try {
+      const res = await fetch(`data/seasons/${i}/statistics_data.json`);
+      
+      // If the file doesn't exist, we've reached the end of the seasons
+      if (!res.ok) break;
 
+      seasons.push(i);
+      i++;
+    } catch (err) {
+      // Break on network errors or total loss of connection
+      break; 
+    }
+  }
+
+  return seasons;
+}
+
+const statsToggle = document.getElementById("stats-select-toggle");
+const statsPanel = document.getElementById("stats-select-panel");
+let currentStatsScope = "all";
+
+statsToggle.addEventListener("click", async (e) => {
+  e.stopPropagation();
+  if (statsPanel.innerHTML.trim() === "") {
+    await populateStatsMenu();
+  }
+  if (statsPanel.hidden) {
+    statsPanel.hidden = false;
+    statsPanel.style.display = "block";
+  } else {
+    statsPanel.hidden = true;
+    statsPanel.style.display = "none";
+  }
+});
+
+async function populateStatsMenu() {
+  const seasons = await discoverSeasons();
+  statsPanel.innerHTML = `
+    <div class="season-header">Include data from:</div>
+    <div class="season-item ${currentStatsScope === "all" ? "current-season" : ""}"
+         data-scope="all">
+      <span>All seasons</span>
+    </div>
+  `;
+  seasons.forEach(season => {
+    const item = document.createElement("div");
+    item.className = "season-item";
+    if (currentStatsScope === season) {
+      item.classList.add("current-season");
+    }
+    item.dataset.scope = season;
+    item.innerHTML = `<span>Season ${season}</span>`;
+    statsPanel.appendChild(item);
+  });
+  statsPanel.querySelectorAll(".season-item").forEach(item => {
+    item.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      currentStatsScope = item.dataset.scope === "all"
+        ? "all"
+        : Number(item.dataset.scope);
+      statsPanel.hidden = true;
+      statsPanel.style.display = "none";
+      statsPanel.innerHTML = "";
+      await refreshStatistics();
+    });
+  });
+}
+
+async function getActivityTimestampsForScope(scope) {
+  if (scope === "all") {
+    const seasons = await discoverSeasons();
+    const allTimestamps = [];
+    for (const season of seasons) {
+      try {
+        const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (Array.isArray(data.activity)) {
+          allTimestamps.push(...data.activity);
+        }
+      } catch (err) {}
+    }
+    return allTimestamps;
+  }
+  const res = await fetchNoCache(`data/seasons/${scope}/statistics_data.json`);
+  const data = await res.json();
+  return data.activity || [];
+}
 
 
 
@@ -48,114 +154,182 @@ const CHART_COLORSX = {
 
 
 async function loadActivityChart() {
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
-  const data = await res.json();
-  const timestamps = data.activity || [];
-
-  const dates = timestamps.map(ts => new Date(ts)).sort((a, b) => a - b);
-  if (!dates.length) return;
-
-// Convert all activity timestamps to UTC-normalized dates
-const datesUTC = timestamps
-  .map(ts => new Date(ts))
-  .sort((a, b) => a - b);
-
-// 1. Anchor earliest date to UTC midnight
-const first = datesUTC[0];
-const startUTC = new Date(Date.UTC(
-  first.getUTCFullYear(),
-  first.getUTCMonth(),
-  first.getUTCDate()
-));
-
-// 2. Convert Sunday (0) to 7 so Monday is week start
-const weekday = startUTC.getUTCDay() === 0 ? 7 : startUTC.getUTCDay();
-
-// 3. Move to Monday of that week
-startUTC.setUTCDate(startUTC.getUTCDate() - weekday + 1);
-
-// 4. Build week buckets in UTC (no local timezone involved)
-const nowUTC = new Date();
-const weekBuckets = {};
-
-for (
-  let d = new Date(startUTC);
-  d <= nowUTC;
-  d.setUTCDate(d.getUTCDate() + 7)
-) {
-  const key = d.toISOString().slice(0, 10);
-  weekBuckets[key] = 0;
-}
-
-// 5. Assign activity items into their correct UTC week
-for (const date of datesUTC) {
-  const weekStartUTC = new Date(Date.UTC(
+  
+  function weekStartUTC(date) {
+  const d = new Date(Date.UTC(
     date.getUTCFullYear(),
     date.getUTCMonth(),
     date.getUTCDate()
   ));
-  const wd = weekStartUTC.getUTCDay() === 0 ? 7 : weekStartUTC.getUTCDay();
-  weekStartUTC.setUTCDate(weekStartUTC.getUTCDate() - wd + 1);
+  const wd = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - wd + 1);
+  return d;
+}
 
-  const key = weekStartUTC.toISOString().slice(0, 10);
-  if (key in weekBuckets) weekBuckets[key]++;
+function currentWeekStartUTC() {
+  return weekStartUTC(new Date());
+}
+
+  let _seasonStartsCache = null;
+
+async function getSeasonStartsUTC() {
+  if (_seasonStartsCache) return _seasonStartsCache;
+
+  const res = await fetchNoCache("data/misc_data.json");
+  const data = await res.json();
+
+  _seasonStartsCache = Object.fromEntries(
+    Object.entries(data.seasons).map(([k, v]) => [
+      Number(k),
+      new Date(v)
+    ])
+  );
+
+  return _seasonStartsCache;
+}
+
+async function resolveActivityAxisBounds(scope) {
+  const seasonStarts = await getSeasonStartsUTC();
+
+  // ignore season -1 etc
+  const realSeasons = Object.keys(seasonStarts)
+    .map(Number)
+    .filter(s => s >= 0);
+
+  // what's the current season
+  const now = new Date();
+
+const nowSeason = realSeasons
+  .filter(s => seasonStarts[s] <= now)
+  .sort((a, b) => b - a)[0];
+
+  // ALL seasons
+  if (scope === "all") {
+    const earliestSeason = Math.min(...realSeasons);
+    return {
+      startUTC: weekStartUTC(seasonStarts[earliestSeason]),
+      endUTC: currentWeekStartUTC()
+    };
+  }
+
+  // SINGLE season: negative scope (-1, etc.) fallback
+  if (scope < 0) {
+    const earliestSeason = Math.min(...realSeasons);
+    return {
+      startUTC: weekStartUTC(seasonStarts[earliestSeason]),
+      endUTC: currentWeekStartUTC()
+    };
+  }
+
+  // SINGLE season: normal positive season
+  const season = scope;
+  const seasonStart = seasonStarts[season];
+  const nextSeasonStart = seasonStarts[season + 1];
+
+  const startUTC = weekStartUTC(seasonStart);
+
+  
+  const endUTC = (season === nowSeason)
+    ? currentWeekStartUTC() // current season → end at current week
+    : (nextSeasonStart ? weekStartUTC(nextSeasonStart) : currentWeekStartUTC()); // finished season → end at next season start
+
+  return { startUTC, endUTC };
 }
 
 
 
 
 
+
+  const timestamps = await getActivityTimestampsForScope(currentStatsScope);
+  if (!timestamps.length) return;
+
+  const datesUTC = timestamps
+    .map(ts => new Date(ts))
+    .sort((a, b) => a - b);
+
+
+
+  const { startUTC, endUTC } =
+  await resolveActivityAxisBounds(currentStatsScope);
+
+
+  const weekBuckets = {};
+
+  for (
+  let d = new Date(startUTC);
+  d <= endUTC;
+  d.setUTCDate(d.getUTCDate() + 7)
+) {
+    weekBuckets[d.toISOString().slice(0, 10)] = 0;
+  }
+
+  for (const date of datesUTC) {
+    const w = new Date(Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate()
+    ));
+    const wd = w.getUTCDay() === 0 ? 7 : w.getUTCDay();
+    w.setUTCDate(w.getUTCDate() - wd + 1);
+
+    const key = w.toISOString().slice(0, 10);
+    if (key in weekBuckets) weekBuckets[key]++;
+  }
+
   const labels = Object.keys(weekBuckets);
   const counts = Object.values(weekBuckets);
 
-  Chart.defaults.color = "#ccc";
-  Chart.defaults.borderColor = "#333";
 
-
-
-
-
-new Chart(document.getElementById("activityChart"), {
-  type: "bar",
-  data: {
-    labels,
-    datasets: [{
-      label: "Games Played",
-      data: counts,
-      backgroundColor: CHART_COLORS.ACTIVITY_BAR,
-      borderColor: CHART_COLORS.ACTIVITY_BORDER,
-      borderWidth: 1,
-      borderRadius: 6
-    }]
-  },
-  options: {
-    scales: {
-      x: {
-        title: { display: true, text: "Week starting" },
-        grid: { color: "#222" }
-      },
-      y: {
-        title: { display: true, text: "Games" },
-        beginAtZero: true,
-        grid: { color: "#222" }
-      }
+  activityChartInstance = new Chart(
+  document.getElementById("activityChart"),
+  {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        data: counts,
+        backgroundColor: CHART_COLORS.ACTIVITY_BAR,
+        borderColor: CHART_COLORS.ACTIVITY_BORDER,
+        borderWidth: 1,
+        borderRadius: 6
+      }]
     },
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          title: function() {
-            return ""; // removes the header
-          },
-          label: function(context) {
-            return context.raw + " games"; 
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: function () {
+              return ""; // remove default header
+            },
+            label: function (context) {
+              return context.raw + " games";
+            }
           }
         }
+      },
+      scales: {
+        x: {
+  title: {
+    display: true,
+    text: "Week starting",
+    color: "#ccc"
+  },
+  ticks: {
+    color: "#ccc"
+  },
+  grid: { color: "#222" }
+},
+y: {
+  beginAtZero: true,
+  ticks: { color: "#ccc" },
+  grid: { color: "#222" }
+}
       }
     }
   }
-});
+);
 }
 
 
@@ -167,80 +341,79 @@ new Chart(document.getElementById("activityChart"), {
 
 
 async function loadActivityWeekdayChart() {
-  // 1. Load season + activity timestamps
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
-  const data = await res.json();
-  const timestamps = data.activity || [];
-
+  const timestamps = await getActivityTimestampsForScope(currentStatsScope);
   if (!timestamps.length) return;
 
-  // 2. Convert to UTC Date objects and sort
-  const datesUTC = timestamps.map(ts => new Date(ts));
-  datesUTC.sort((a, b) => a - b);
+  const datesUTC = timestamps
+    .map(ts => new Date(ts))
+    .sort((a, b) => a - b);
 
-  // 3. Weekday buckets: Monday–Sunday
+  // Weekday buckets: Mon = 0 … Sun = 6
   const weekdayBuckets = Array(7).fill(0);
   for (const d of datesUTC) {
-    const jsDay = d.getUTCDay(); // 0=Sun … 6=Sat
-    const weekdayIndex = (jsDay + 6) % 7; // shift: 0=Mon … 6=Sun
-    weekdayBuckets[weekdayIndex]++;
+    const jsDay = d.getUTCDay();     // 0=Sun … 6=Sat
+    const idx = (jsDay + 6) % 7;     // shift → 0=Mon … 6=Sun
+    weekdayBuckets[idx]++;
   }
 
-  // 4. Compute number of weeks spanned
+  // Weeks spanned
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const weeksSpan = Math.max(1, (datesUTC[datesUTC.length - 1] - datesUTC[0]) / msPerWeek);
+  const weeksSpan = Math.max(
+    1,
+    (datesUTC.at(-1) - datesUTC[0]) / msPerWeek
+  );
 
-  // 5. Compute per-weekday averages
-  const weekdayAverages = weekdayBuckets.map(count => count / weeksSpan);
-
-  // 6. Labels
+  const weekdayAverages = weekdayBuckets.map(v => v / weeksSpan);
   const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-  // 7. Draw chart with averages as main data
-  const ctx = document.getElementById("activityWeekdayChart").getContext("2d");
+  // Destroy old instance if needed
+  if (activityWeekdayChartInstance) {
+    activityWeekdayChartInstance.destroy();
+  }
 
-  new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        label: "Average games per weekday",
-        data: weekdayAverages,
-        borderWidth: 2,
-        borderColor: CHART_COLORS.ACTIVITY_BORDER,
-        backgroundColor: CHART_COLORS.ACTIVITY_BAR,
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: (ctx) => {
-              const i = ctx.dataIndex;
-              const avg = weekdayAverages[i].toFixed(2);
-              const total = weekdayBuckets[i];
-              return [`Avg number of games: ${avg}`, `Total games: ${total}`];
+  activityWeekdayChartInstance = new Chart(
+    document.getElementById("activityWeekdayChart"),
+    {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          data: weekdayAverages,
+          backgroundColor: CHART_COLORS.ACTIVITY_BAR,
+          borderColor: CHART_COLORS.ACTIVITY_BORDER,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: (ctx) => {
+                const i = ctx.dataIndex;
+                const avg = weekdayAverages[i].toFixed(2);
+                const total = weekdayBuckets[i];
+
+                return [
+                  `Avg games per week: ${avg}`,
+                  `Total games: ${total}`
+                ];
+              }
             }
           }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: "#222" }
         },
-        y: {
-          beginAtZero: true,
-          grid: { color: "#222" },
-          ticks: {
-            precision: 2 
+        scales: {
+          x: { grid: { color: "#222" } },
+          y: {
+            beginAtZero: true,
+            grid: { color: "#222" },
+            ticks: { precision: 2 }
           }
         }
       }
     }
-  });
+  );
 }
 
 
@@ -264,67 +437,77 @@ async function loadActivityWeekdayChart() {
 
 
 async function loadActivityClockChart() {
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
-  const data = await res.json();
-  const timestamps = data.activity || [];
-
+  const timestamps = await getActivityTimestampsForScope(currentStatsScope);
   if (!timestamps.length) return;
 
-  const datesUTC = timestamps.map(ts => new Date(ts));
-
-  // Count games by hour (UTC)
   const hourBuckets = Array(24).fill(0);
-  for (const d of datesUTC) {
-    hourBuckets[d.getUTCHours()]++;
+  for (const ts of timestamps) {
+    hourBuckets[new Date(ts).getUTCHours()]++;
   }
 
-  const totalGames = hourBuckets.reduce((a, b) => a + b, 0);
+  const total = hourBuckets.reduce((a, b) => a + b, 0);
+  const labels = [...Array(24).keys()].map(String);
 
-  const labels = [...Array(24).keys()].map(h => `${h}`);
+  if (activityClockChartInstance) {
+    activityClockChartInstance.destroy();
+  }
 
-  new Chart(document.getElementById("activityChartB"), {
-    type: "radar",
-    data: {
-      labels,
-      datasets: [{
-        data: hourBuckets,
-        borderWidth: 2,
-        borderColor: CHART_COLORS.ACTIVITY_BORDER,
-        backgroundColor: CHART_COLORS.ACTIVITY_BAR,
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          // Remove the title by returning an empty string
-          callbacks: {
-            title: function() { return ""; },
-            label: function(context) {
-              const hour = parseInt(context.label);
-              const count = context.raw;
-              const pct = totalGames ? ((count / totalGames) * 100).toFixed(1) : 0;
-              const hourStart = hour.toString().padStart(2, '0') + "00";
-              const hourEnd = ((hour + 1) % 24).toString().padStart(2, '0') + "00";
-              return `${hourStart} - ${hourEnd} UTC: ${count} games (${pct}%)`;
+  activityClockChartInstance = new Chart(
+    document.getElementById("activityChartB"),
+    {
+      type: "radar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            data: hourBuckets,
+            borderWidth: 2,
+            borderColor: CHART_COLORS.ACTIVITY_BORDER,
+            backgroundColor: CHART_COLORS.ACTIVITY_BAR
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              title: () => "",
+              label: ctx => {
+                const h = Number(ctx.label);
+                const start = h.toString().padStart(2, "0") + "00";
+                const end = ((h + 1) % 24).toString().padStart(2, "0") + "00";
+                const pct = total
+                  ? ((ctx.raw / total) * 100).toFixed(1)
+                  : 0;
+                return `${start}–${end} UTC: ${ctx.raw} games (${pct}%)`;
+              }
+            }
+          }
+        },
+        interaction: {
+          mode: "nearest",
+          intersect: false
+        },
+        scales: {
+          r: {
+            angleLines: {
+              color: "#333"
+            },
+            grid: {
+              color: "#222"
+            },
+            ticks: {
+              display: false,
+              backdropColor: "transparent"
             }
           }
         }
-      },
-      interaction: {
-        mode: 'nearest',    
-        intersect: false    
-      },
-      scales: {
-        r: {
-          angleLines: { color: "#333" },
-          grid: { color: "#222" },
-          ticks: { display: false, backdropColor: "transparent" }
-        }
       }
     }
-  });
+  );
 }
 
 
@@ -347,19 +530,61 @@ async function loadActivityClockChart() {
 
 
 async function loadIndividualRaceSelectionChart() {
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
-  const data = await res.json();
-  const irs = data.irs || {};
 
-  const raceOrder = ["p", "t", "z", "r"];
-  const raceNames = { p: "Protoss", t: "Terran", z: "Zerg", r: "Random" };
+  const seasons = currentStatsScope === "all"
+    ? await discoverSeasons()
+    : [currentStatsScope];
+
+  
+  // Merging data
+  
+
+  const irs = { p: [0,0], t: [0,0], z: [0,0], r: [0,0] }; 
+irs.x = {}; 
+
+for (const season of seasons) {
+  try {
+    const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
+    if (!res.ok) continue;
+    const data = await res.json();
+    const sIrs = data.irs || {};
+
+    // Merge top-level races
+    for (const r of ["p","t","z","r"]) {
+      if (sIrs[r]) {
+        irs[r][0] += sIrs[r][0];
+        irs[r][1] += sIrs[r][1];
+      }
+    }
+
+    // Merge subraces if present
+    if (sIrs.x) {
+      for (const [sub, [w,g]] of Object.entries(sIrs.x)) {
+        irs.x[sub] ??= [0,0];
+        irs.x[sub][0] += w;
+        irs.x[sub][1] += g;
+      }
+    }
+
+  } catch(e) {
+    console.warn(`Skipping season ${season} due to error:`, e);
+  }
+}
+
+  
+  
+  
+  const raceOrder  = ["p", "t", "z", "r"];
+  const raceNames  = { p: "Protoss", t: "Terran", z: "Zerg", r: "Random" };
   const raceColors = { p: "#EBD678", t: "#53B3FC", z: "#C1A3F5", r: "#AABBCB" };
 
   const labels = raceOrder.map(r => raceNames[r]);
-  const values = raceOrder.map(r => irs[r]?.[0] || 0); // wins
+  const values = raceOrder.map(r => irs[r]?.[0] || 0);
   const colors = raceOrder.map(r => raceColors[r]);
 
+  
+  
+  
   let tooltipEl = document.getElementById("irs-tooltip");
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
@@ -373,24 +598,38 @@ async function loadIndividualRaceSelectionChart() {
       padding: "8px 12px",
       fontSize: "0.85em",
       pointerEvents: "none",
-      boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
       zIndex: 10,
-      opacity: 0,
-      transition: "opacity 0.1s ease"
+      opacity: 0
     });
     document.body.appendChild(tooltipEl);
   }
 
- new Chart(document.getElementById("irsChart"), {
-  type: "pie",
-  data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor: "#1f1f1f", borderWidth: 0 }] },
-  options: {
-    aspectRatio: 1.3,
-    plugins: {
-      legend: { position: "right", labels: { color: "#ccc", boxWidth: 16, padding: 14 } },
-      tooltip: {
-        enabled: false,
-        external: ctx => {
+
+  
+  // Create 
+  
+  irsChartInstance = new Chart(
+    document.getElementById("irsChart"),
+    {
+      type: "pie",
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        aspectRatio: 1.3,
+        plugins: {
+          legend: {
+            position: "right",
+            labels: { color: "#ccc", boxWidth: 16, padding: 14 }
+          },
+          tooltip: {
+            enabled: false,
+            external: ctx => {
           const tooltip = ctx.tooltip;
           if (!tooltip || !tooltip.opacity) {
             tooltipEl.style.opacity = 0;
@@ -405,14 +644,14 @@ async function loadIndividualRaceSelectionChart() {
           const totalCount = ctx.chart._metasets[0].total;  // total picks
           const percent = totalCount ? ((value / totalCount) * 100).toFixed(1) : 0;
 
-// Sum all games played (not just wins) for all races
+
 const totalGamesAllRaces = raceOrder.reduce((sum, r) => sum + (irs[r]?.[1] || 0), 0);
 
 const totalGamesPlayed = irs[key]?.[1] || 0; // games for this race
 const [wins, games] = irs[key] || [0, 0];
 const wr = games ? ((wins / games) * 100).toFixed(1) : 0;
 
-// First line: heading = race only
+
 let html = `
   <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
     <span style="width:12px;height:12px;background:${raceColors[key]};display:inline-block;border-radius:2px;"></span>
@@ -495,17 +734,41 @@ if (key === "r" && irs.x) {
 
 
 
-/* GRAF 5*/
+
+
+
+/* Chart 5*/
 
 async function loadTeamRaceFrequencyChart() {
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
-  const data = await res.json();
-  const muwr = data.muwr || {};
+  
 
-  // -----------------------------------
-  // COLORS
-  // -----------------------------------
+const toggleBtn = document.getElementById("toggleTeamChart");
+toggleBtn.replaceWith(toggleBtn.cloneNode(true));
+const cleanToggleBtn = document.getElementById("toggleTeamChart");
+
+
+
+const seasons = currentStatsScope === "all"
+  ? await discoverSeasons()
+  : [currentStatsScope];
+
+const muwr = {};
+
+for (const season of seasons) {
+  const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
+  const data = await res.json();
+
+  for (const [matchup, vs] of Object.entries(data.muwr || {})) {
+    muwr[matchup] ??= {};
+    for (const [opp, [w, g]] of Object.entries(vs)) {
+      muwr[matchup][opp] ??= [0, 0];
+      muwr[matchup][opp][0] += w;
+      muwr[matchup][opp][1] += g;
+    }
+  }
+}
+
+
   const raceColors = {
     p: "#EBD678",
     t: "#53B3FC",
@@ -513,9 +776,7 @@ async function loadTeamRaceFrequencyChart() {
     r: "#AABBCB"
   };
 
-  // -----------------------------------
-  // BUILD ENTRIES
-  // -----------------------------------
+
   const entries = Object.entries(muwr).map(([matchup, vsData]) => {
     let totalGames = 0;
     const sub = [];
@@ -531,17 +792,17 @@ async function loadTeamRaceFrequencyChart() {
 
   const grandTotalSelections = entries.reduce((s, e) => s + e.totalGames, 0);
 
-  // -----------------------------------
-  // FREQUENCY SORT
-  // -----------------------------------
+  
+  // Frequency sort
+  
   entries.sort((a, b) => b.totalGames - a.totalGames);
 
   const freqLabels = entries.map(e => e.matchup.toUpperCase());
   const freqValues = entries.map(e => e.totalGames);
 
-  // -----------------------------------
-  // WIN RATE SORT
-  // -----------------------------------
+  
+  // Win rate sort
+  
   const wrSorted = [...entries].sort((a, b) => {
     const gamesA = a.sub.reduce((s, r) => s + r.games, 0);
     const gamesB = b.sub.reduce((s, r) => s + r.games, 0);
@@ -557,9 +818,7 @@ async function loadTeamRaceFrequencyChart() {
     return games ? (wins / games * 100).toFixed(1) : 0;
   });
 
-  // -----------------------------------
-  // TOOLTIP ELEMENT
-  // -----------------------------------
+ 
   let tooltipEl = document.getElementById("teamfreq-tooltip");
   if (!tooltipEl) {
     tooltipEl = document.createElement("div");
@@ -581,9 +840,7 @@ async function loadTeamRaceFrequencyChart() {
     document.body.appendChild(tooltipEl);
   }
 
-  // -----------------------------------
-  // CUSTOM TOOLTIP
-  // -----------------------------------
+
   function detailedTooltip(ctx, activeEntries) {
     const { chart, tooltip } = ctx;
 
@@ -673,10 +930,10 @@ async function loadTeamRaceFrequencyChart() {
     tooltipEl.style.top = rect.top + window.pageYOffset + tooltip.caretY + "px";
   }
 
-  // -----------------------------------
-  // SHARED OPTIONS
-  // -----------------------------------
-  // Added isWinRateView parameter
+ 
+  // Shared tooltip options
+
+
   const chartOptions = (activeEntries, axisLabel, isWinRateView = false) => ({
     scales: {
       x: {
@@ -706,9 +963,7 @@ async function loadTeamRaceFrequencyChart() {
     }
   });
 
-  // -----------------------------------
-  // INITIAL CHART
-  // -----------------------------------
+
   const canvas = document.getElementById("teamFreqChart");
   const ctx2d = canvas.getContext("2d");
 
@@ -716,6 +971,9 @@ async function loadTeamRaceFrequencyChart() {
 
 
   let showingFreq = true;
+
+  // initial chart
+
 
   let currentChart = new Chart(ctx2d, {
     type: "bar",
@@ -734,56 +992,58 @@ async function loadTeamRaceFrequencyChart() {
     options: chartOptions(entries, "Number of Selections") 
   });
 
-  // -----------------------------------
-  // BUTTON TOGGLE
-  // -----------------------------------
-  document.getElementById("toggleTeamChart").addEventListener("click", () => {
-    currentChart.destroy();
 
-    if (showingFreq) {
-      currentChart = new Chart(ctx2d, {
-        type: "bar",
-        data: {
-          labels: wrLabels,
-          datasets: [{
-            label: "Win Rate (%)",
-            data: wrValues,
-            backgroundColor: CHART_COLORS.WINRATE_BAR,
-            borderColor: CHART_COLORS.WINRATE_BORDER,
-            borderWidth: 1,
-            borderRadius: 6
-          }]
-        },
-        // Passed true for isWinRateView to set max: 100
-        options: chartOptions(wrSorted, "Win Rate (%)", true) 
-      });
+  teamFreqChartInstance = currentChart; 
 
-      toggleTeamChart.textContent = "Switch to Race Selection Rates View";
-      labelEl.textContent = "Team Race Selection Win Rates";
-    } else {
-      currentChart = new Chart(ctx2d, {
-        type: "bar",
-        data: {
-          labels: freqLabels,
-          datasets: [{
-            label: "Selections",
-            data: freqValues,
-            backgroundColor: "rgba(79,163,255,0.8)",
-            borderColor: "#4FA3FF",
-            borderWidth: 1,
-            borderRadius: 6
-          }]
-        },
-        // Not Win Rate, so no third argument
-        options: chartOptions(entries, "Number of Selections") 
-      });
+  
+  // Button toggle
+  
+  cleanToggleBtn.addEventListener("click", () => {
+  currentChart.destroy();
 
-      toggleTeamChart.textContent = "Switch to Win Rate View";
-      labelEl.textContent = "Team Race Selection Rates";
-    }
+  if (showingFreq) {
+    currentChart = new Chart(ctx2d, {
+      type: "bar",
+      data: {
+        labels: wrLabels,
+        datasets: [{
+          label: "Win Rate (%)",
+          data: wrValues,
+          backgroundColor: CHART_COLORS.WINRATE_BAR,
+          borderColor: CHART_COLORS.WINRATE_BORDER,
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: chartOptions(wrSorted, "Win Rate (%)", true)
+    });
 
-    showingFreq = !showingFreq;
-  });
+    cleanToggleBtn.textContent = "Switch to Race Selection Rates View";
+    labelEl.textContent = "Team Race Selection Win Rates";
+  } else {
+    currentChart = new Chart(ctx2d, {
+      type: "bar",
+      data: {
+        labels: freqLabels,
+        datasets: [{
+          label: "Selections",
+          data: freqValues,
+          backgroundColor: CHART_COLORS.FREQUENCY_BAR,
+          borderColor: CHART_COLORS.FREQUENCY_BORDER,
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: chartOptions(entries, "Number of Selections")
+    });
+
+    cleanToggleBtn.textContent = "Switch to Win Rate View";
+    labelEl.textContent = "Team Race Selection Rates";
+  }
+
+  teamFreqChartInstance = currentChart;
+  showingFreq = !showingFreq;
+});
 }
 
 
@@ -791,14 +1051,34 @@ async function loadTeamRaceFrequencyChart() {
 
 
 
-/* GRAF 6*/
+/* Chart 6*/
 
 
 async function loadMatchupWinrateChart() {
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
+ 
+
+
+const seasons = currentStatsScope === "all"
+  ? await discoverSeasons()
+  : [currentStatsScope];
+
+const muwrr = {};
+
+for (const season of seasons) {
+  const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
   const data = await res.json();
-  const muwrr = data.muwrr || {};
+
+  for (const [matchup, vs] of Object.entries(data.muwrr || {})) {
+    muwrr[matchup] ??= {};
+    for (const [opp, [w, g]] of Object.entries(vs)) {
+      muwrr[matchup][opp] ??= [0, 0];
+      muwrr[matchup][opp][0] += w;
+      muwrr[matchup][opp][1] += g;
+    }
+  }
+}
+
+
 
   const raceColors = {
     p: "#EBD678",
@@ -848,29 +1128,33 @@ async function loadMatchupWinrateChart() {
     document.body.appendChild(tooltipEl);
   }
 
-  new Chart(document.getElementById("matchupChart"), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        label: "Winrate %",
-        data: winrates,
-        backgroundColor: CHART_COLORS.WINRATE_BAR,
-        borderColor: CHART_COLORS.WINRATE_BORDER,
-        borderWidth: 1,
-        borderRadius: 6
-      }]
+  const canvas = document.getElementById("matchupChart");
+const ctx2d = canvas.getContext("2d");
+
+
+  matchupChartInstance = new Chart(ctx2d, {
+  type: "bar",
+  data: {
+    labels,
+    datasets: [{
+      label: "Winrate %",
+      data: winrates,
+      backgroundColor: CHART_COLORS.WINRATE_BAR,
+      borderColor: CHART_COLORS.WINRATE_BORDER,
+      borderWidth: 1,
+      borderRadius: 6
+    }]
+  },
+  options: {
+    scales: {
+      x: { grid: { color: "#222" }, ticks: { color: "#ccc" } },
+      y: { beginAtZero: true, max: 100, grid: { color: "#222" }, ticks: { color: "#ccc" } }
     },
-    options: {
-      scales: {
-        x: { grid: { color: "#222" }, ticks: { color: "#ccc" } },
-        y: { beginAtZero: true, max: 100, grid: { color: "#222" }, ticks: { color: "#ccc" } }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: false,
-          external: ctx => {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: false,
+        external: ctx => {
             const tooltip = ctx.tooltip;
             if (!tooltip || !tooltip.opacity) {
               tooltipEl.style.opacity = 0;
@@ -949,10 +1233,31 @@ async function loadMatchupWinrateChart() {
 
 
 async function loadWinrateChart() {
-  const currentSeason = await getCurrentSeason().catch(() => 0);
-  const res = await fetchNoCache(`data/seasons/${currentSeason}/statistics_data.json`);
+  
+
+
+const seasons = currentStatsScope === "all"
+  ? await discoverSeasons()
+  : [currentStatsScope];
+
+const wlp = {};
+
+for (const season of seasons) {
+  const res = await fetchNoCache(`data/seasons/${season}/statistics_data.json`);
   const data = await res.json();
-  const wlp = data.wlp || {};
+
+  for (const [k, v] of Object.entries(data.wlp || {})) {
+    if (!wlp[k]) wlp[k] = Array.isArray(v) ? [0, 0] : { wins: 0, losses: 0 };
+
+    if (Array.isArray(v)) {
+      wlp[k][0] += v[0];
+      wlp[k][1] += v[1];
+    } else {
+      wlp[k].wins += v.wins;
+      wlp[k].losses += v.losses;
+    }
+  }
+}
 
   const groups = {
     pz: ["ppzz", "pprz", "zzrp", "rprz"],
@@ -1041,32 +1346,38 @@ async function loadWinrateChart() {
     document.body.appendChild(tooltipEl);
   }
 
-  // --- Draw chart ---
-  new Chart(document.getElementById("winrateChart"), {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        label: "Winrate %",
-        data: winrates,
-        backgroundColor: CHART_COLORS.WINRATE_BAR,
-        borderColor: CHART_COLORS.WINRATE_BORDER,
-        borderWidth: 1,
-        borderRadius: 6
-      }]
+  // draw chart
+
+
+  const canvas = document.getElementById("winrateChart");
+  const ctx2d = canvas.getContext("2d");
+
+
+
+ winrateChartInstance = new Chart(ctx2d, {
+  type: "bar",
+  data: {
+    labels,
+    datasets: [{
+      label: "Winrate %",
+      data: winrates,
+      backgroundColor: CHART_COLORS.WINRATE_BAR,
+      borderColor: CHART_COLORS.WINRATE_BORDER,
+      borderWidth: 1,
+      borderRadius: 6
+    }]
+  },
+  options: {
+    indexAxis: "x",
+    scales: {
+      x: { grid: { color: "#222" }, ticks: { color: "#ccc" } },
+      y: { beginAtZero: true, max: 100, grid: { color: "#222" }, ticks: { color: "#ccc" } }
     },
-    options: {
-      indexAxis: "x",
-      scales: {
-        x: { grid: { color: "#222" }, ticks: { color: "#ccc" } },
-        y: { beginAtZero: true, max: 100,  	grid: { color: "#222" }, ticks: { color: "#ccc" } }
-      },
-      
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-  enabled: false,
- external: ctx => {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: false,
+        external: ctx => {
   const tooltip = ctx.tooltip;
   if (!tooltip || !tooltip.opacity) {
     tooltipEl.style.opacity = 0;
@@ -1081,7 +1392,7 @@ async function loadWinrateChart() {
 
   const wr = g.total ? ((g.wins / g.total) * 100).toFixed(1) : 0;
 
-  // ---------- Header ----------
+  // Header
   let html = `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
       <span style="width:10px;height:10px;background:${raceColors[r1.toLowerCase()]};display:inline-block;border-radius:2px;"></span>
@@ -1090,7 +1401,7 @@ async function loadWinrateChart() {
     </div>
   `;
 
- // OVERALL ROW
+ // Overall
 html += `
   <div style="
     display:grid;
@@ -1108,7 +1419,7 @@ html += `
   </div>
 `;
 
-// COLUMN HEADERS
+// Column headers
 html += `
   <div style="
     display:grid;
@@ -1181,13 +1492,14 @@ html += `</div>`;
 
 
 
-loadActivityChart();
-loadActivityWeekdayChart();
-loadActivityClockChart();
-loadIndividualRaceSelectionChart();
+async function loadAllStatisticsCharts() {
+  await loadActivityChart();
+  await loadActivityWeekdayChart();
+  await loadActivityClockChart();
+  await loadIndividualRaceSelectionChart();
+  await loadTeamRaceFrequencyChart();
+  await loadMatchupWinrateChart();
+  await loadWinrateChart();
+}
 
-loadTeamRaceFrequencyChart();
-
-loadMatchupWinrateChart();   
-
-loadWinrateChart();
+loadAllStatisticsCharts();
