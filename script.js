@@ -64,14 +64,18 @@ function getSeasonFromURL() {
 }
 
 function withSeason(url, season) {
-  if (season === null || season === undefined) return url;
-  if (season === currentSeason) return url;
-
-  
   const u = new URL(url, window.location.href);
-  u.searchParams.set("season", season);
-  
-  
+
+  if (season !== null && season !== undefined) {
+    // always remember where we came from
+    u.searchParams.set("fromSeason", season);
+
+    // only set season if it’s not the current one
+    if (season !== currentSeason) {
+      u.searchParams.set("season", season);
+    }
+  }
+
   return u.pathname + u.search;
 }
 
@@ -351,7 +355,7 @@ const rankedPlayers = rankPlayers(
 }
 
 
-  // CLEAN UP THIS SHIT
+  
  function setupSeasonShift(seasonLabelEl) {
   const wrap = document.querySelector(".season-wrap");
   const extra = seasonLabelEl?.querySelector(".season-extra");
@@ -389,49 +393,57 @@ const rankedPlayers = rankPlayers(
 
 async function loadSeason(seasonNumber, seasonLabelEl) {
   if (seasonCountdownInterval) {
-  clearInterval(seasonCountdownInterval);
-  seasonCountdownInterval = null;
-  seasonCountdownShowing = false;
-}
+    clearInterval(seasonCountdownInterval);
+    seasonCountdownInterval = null;
+    seasonCountdownShowing = false;
+  }
 
+  if (currentSeason === null) return;
 
-if (currentSeason === null) return;
-
-  
   viewingSeason = seasonNumber;
+  isHistoricView = viewingSeason !== currentSeason;
+  document.body.classList.toggle("historic-view", isHistoricView);
 
-isHistoricView = viewingSeason !== currentSeason;
-document.body.classList.toggle("historic-view", isHistoricView);
-
-
-
-history.replaceState(
-  { season: viewingSeason },
-  "",
-  isHistoricView
-    ? withSeason("index.html", viewingSeason)
-    : "index.html"
-);
+  history.replaceState(
+    { season: viewingSeason },
+    "",
+    isHistoricView
+      ? `index.html?season=${viewingSeason}`
+      : "index.html"
+  );
 
   const start = seasonMeta.seasons[seasonNumber];
   const end = seasonMeta.seasons[seasonNumber + 1] ?? null;
 
   updateSeasonLabel(seasonNumber, start, end, seasonLabelEl);
   setupSeasonShift(seasonLabelEl);
+
   if (!isHistoricView && end) {
-  enableSeasonCountdown(seasonLabelEl, end);
+    enableSeasonCountdown(seasonLabelEl, end);
+  }
+
+  // Clear the old season immediately.
+  tbody.innerHTML = "";
+
+  try {
+    const [ratings, names] = await Promise.all([
+      fetchNoCache(`${BASE_PATH}data/seasons/${seasonNumber}/ratings.json`)
+        .then(r => {
+          if (!r.ok) throw new Error(`ratings.json: ${r.status}`);
+          return r.json();
+        }),
+      fetchNoCache(`${BASE_PATH}data/seasons/${seasonNumber}/names.json`)
+        .then(r => {
+          if (!r.ok) throw new Error(`names.json: ${r.status}`);
+          return r.json();
+        })
+    ]);
+
+    renderLeaderboard(ratings, names);
+  } catch (err) {
+    console.log(`No data available for Season ${seasonNumber}.`);
+  }
 }
-
-
-
-  const [ratings, names] = await Promise.all([
-    fetchNoCache(`${BASE_PATH}data/seasons/${seasonNumber}/ratings.json`).then(r => r.json()),
-    fetchNoCache(`${BASE_PATH}data/seasons/${seasonNumber}/names.json`).then(r => r.json())
-  ]);
-
-  renderLeaderboard(ratings, names);
-}
-
 
 function attachSeasonExtraHandler(seasonLabelEl) {
   const extraEl = seasonLabelEl?.querySelector(".season-extra");
@@ -575,9 +587,6 @@ document.addEventListener("click", () => {
 
 
 
-  // ------------------------
-  // CLEAN UP THIS SHIT
-  // ------------------------
   if (seasonLabelEl) {
     updateSeasonLabel(currentSeason, startTime, endTime, seasonLabelEl);
     setupSeasonShift(seasonLabelEl); 
@@ -588,9 +597,9 @@ document.addEventListener("click", () => {
 
   }
 
-  // ------------------------
+
   // Last updated info
-  // ------------------------
+
 const lastUpdatedEl = document.getElementById("last-updated");
   if (lastUpdatedEl) {
     try {
