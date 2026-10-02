@@ -1,4 +1,4 @@
-let viewingSeason = null; // number
+let viewingSeason = null; // number  x
 let isHistoricView = false; // boolean
 let currentSeason = null;
 
