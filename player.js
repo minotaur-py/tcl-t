@@ -834,8 +834,8 @@ if (window.location.pathname.includes("player.html")) {
   toggleBtn.addEventListener("click", () => {
     const opened = extraStats.classList.toggle("open");
     toggleBtn.textContent = opened
-      ? "Hide additional statistics"
-      : "Show additional statistics";
+      ? "Hide statistics"
+      : "Show statistics";
 
 if (opened && !chartLoaded) {
   const playerId = new URLSearchParams(window.location.search).get("id");
